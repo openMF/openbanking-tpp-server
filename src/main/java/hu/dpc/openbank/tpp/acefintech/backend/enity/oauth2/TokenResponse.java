@@ -34,6 +34,10 @@ public class TokenResponse {
     private String error;
     @JsonProperty("error_description")
     private String errorDescription;
+    @JsonIgnore
+    private String subject;
+    @JsonIgnore
+    private long jwtExpires;
 
     @JsonIgnore(true)
     private int httpResponseCode = -1;
@@ -110,4 +114,19 @@ public class TokenResponse {
         this.errorDescription = errorDescription;
     }
 
+    public String getSubject() {
+        return subject;
+    }
+
+    public void setSubject(String subject) {
+        this.subject = subject;
+    }
+
+    public long getJwtExpires() {
+        return jwtExpires;
+    }
+
+    public void setJwtExpires(long jwtExpires) {
+        this.jwtExpires = jwtExpires;
+    }
 }

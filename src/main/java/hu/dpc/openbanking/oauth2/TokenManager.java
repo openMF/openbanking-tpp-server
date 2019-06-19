@@ -4,22 +4,23 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import hu.dpc.openbank.tpp.acefintech.backend.controller.AISPController;
 import hu.dpc.openbank.tpp.acefintech.backend.enity.oauth2.TokenResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.HttpsURLConnection;
 import java.io.*;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
 public class TokenManager {
-    static String CLIENT_ID = "nYdJa_KHnicVXCYEMNSgKVCiCzwa";
-    static String CLIENT_SECRET = "GZhW8YCfC8TC4u2GaRXSXlcRNGwa";
+    private static final Logger LOG = LoggerFactory.getLogger(AISPController.class);
+
 
     private OAuthConfig config;
 
@@ -44,54 +45,57 @@ public class TokenManager {
         return result.toString();
     }
 
-    public static void doit() throws MalformedURLException {
-        OAuthConfig oauthConfig = new OAuthConfig();
-        oauthConfig.setApiKey(CLIENT_ID);
-        oauthConfig.setApiSecret(CLIENT_SECRET);
-        oauthConfig.setTokenURL("https://localhost:8243/token");
-        oauthConfig.setSubject("acefintech");
-        oauthConfig.setCallbackURL("http://acefintech.org/callback");
+    /*
+        public static void doit() throws MalformedURLException {
+            OAuthConfig oauthConfig = new OAuthConfig();
+            oauthConfig.setApiKey(CLIENT_ID);
+            oauthConfig.setApiSecret(CLIENT_SECRET);
+            oauthConfig.setTokenURL("https://localhost:8243/token");
+            oauthConfig.setSubject("acefintech");
+            oauthConfig.setCallbackURL("http://acefintech.org/callback");
 
-        TokenManager tokenManager = new TokenManager(oauthConfig);
+            TokenManager tokenManager = new TokenManager(oauthConfig);
 
-        String[] scopes = new String[]{"accounts", "openid"};
-        Arrays.sort(scopes);
-        TokenResponse token = tokenManager.getAccessTokenWithClientCredential(scopes);
-        debugToken(token);
-        if (token.getHttpResponseCode() == HttpsURLConnection.HTTP_OK) {
-            try {
-                DecodedJWT jwt = JWT.decode(token.getIdToken());
-                String subject = jwt.getSubject();
-                if (null != subject && !oauthConfig.getSubject().equals(subject)) {
-                    System.out.println("Subject not equals");
-                }
-            } catch (JWTDecodeException exception) {
-                //Invalid token
-            }
-        }
-
-        String[] tokenScopes = token.getScope().split(" ");
-        Arrays.sort(tokenScopes);
-
-        for (String scope : scopes) {
-            boolean requestedScopeFound = false;
-            for (String tokenScope : tokenScopes) {
-                if (scope.equals(tokenScope)) {
-                    requestedScopeFound = true;
-                    break;
+            String[] scopes = new String[]{"accounts", "openid"};
+            Arrays.sort(scopes);
+            TokenResponse token = tokenManager.getAccessTokenWithClientCredential(scopes);
+            debugToken(token);
+            if (token.getHttpResponseCode() == HttpsURLConnection.HTTP_OK) {
+                try {
+                    DecodedJWT jwt = JWT.decode(token.getIdToken());
+                    String subject = jwt.getSubject();
+                    if (null != subject && !oauthConfig.getSubject().equals(subject)) {
+                        System.out.println("Subject not equals");
+                    }
+                } catch (JWTDecodeException exception) {
+                    //Invalid token
                 }
             }
-            if (!requestedScopeFound) {
-                System.err.println("Requested scope not found! [" + scope + "]");
+
+            String[] tokenScopes = token.getScope().split(" ");
+            Arrays.sort(tokenScopes);
+
+            for (String scope : scopes) {
+                boolean requestedScopeFound = false;
+                for (String tokenScope : tokenScopes) {
+                    if (scope.equals(tokenScope)) {
+                        requestedScopeFound = true;
+                        break;
+                    }
+                }
+                if (!requestedScopeFound) {
+                    System.err.println("Requested scope not found! [" + scope + "]");
+                }
             }
+
+            TokenResponse userLevelAccessToken = tokenManager.getAccessTokenFromCode("83710e06-7e03-355d-8dd3-937ab320bdc8");
+            debugToken(userLevelAccessToken);
+            TokenResponse refreshToken = tokenManager.refreshToken("83710e06-7e03-355d-8dd3-937ab320bdc8");
+            debugToken(refreshToken);
         }
 
-        TokenResponse userLevelAccessToken = tokenManager.getAccessTokenFromCode("83710e06-7e03-355d-8dd3-937ab320bdc8");
-        debugToken(userLevelAccessToken);
-        TokenResponse refreshToken = tokenManager.refreshToken("83710e06-7e03-355d-8dd3-937ab320bdc8");
-        debugToken(refreshToken);
-    }
 
+     */
     private static void debugToken(TokenResponse token) {
         System.out.println("HTTP: " + token.getHttpResponseCode());
         System.out.println("Access token: " + token.getAccessToken());
@@ -100,6 +104,8 @@ public class TokenManager {
         System.out.println("ID Token: " + token.getIdToken());
         System.out.println("Token type: " + token.getTokenType());
         System.out.println("Expires in: " + token.getExpiresIn());
+        System.out.println("Subject: " + token.getSubject());
+        System.out.println("JWT expires: " + token.getJwtExpires());
         System.err.println("Error: " + token.getError());
         System.err.println("Error description: " + token.getErrorDescription());
 
@@ -107,6 +113,7 @@ public class TokenManager {
 
     /**
      * Execute token POST request.
+     *
      * @param postDataParams required params.k
      * @return
      */
@@ -114,6 +121,8 @@ public class TokenManager {
         int responseCode = -1;
         try {
             URL url = config.getTokenURL();
+
+            LOG.info("Call {}", url.toString());
             HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
             HttpsTrust.INSTANCE.trust(conn);
             conn.setReadTimeout(10000);
@@ -138,6 +147,7 @@ public class TokenManager {
             os.close();
 
             responseCode = conn.getResponseCode();
+            LOG.info("Response code: {}", responseCode);
 
             ObjectMapper mapper = new ObjectMapper();
             String response = "";
@@ -147,9 +157,21 @@ public class TokenManager {
                 response += line;
             }
             conn.disconnect();
+            LOG.info("Response: [{}]", response);
 
             TokenResponse result = mapper.readValue(response, TokenResponse.class);
             result.setHttpResponseCode(responseCode);
+
+            if (responseCode == HttpsURLConnection.HTTP_OK) {
+                try {
+                    DecodedJWT jwt = JWT.decode(result.getIdToken());
+                    result.setSubject(jwt.getSubject());
+                    result.setJwtExpires(jwt.getExpiresAt().getTime() / 1000);
+                } catch (JWTDecodeException exception) {
+                    //Invalid token
+                }
+            }
+
             return result;
         } catch (IOException e) {
             e.printStackTrace();

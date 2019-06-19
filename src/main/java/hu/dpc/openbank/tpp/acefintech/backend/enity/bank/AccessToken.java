@@ -13,14 +13,16 @@ public class AccessToken {
     private int id;
     @Column(name = "BANK_ID")
     private String bankId;
+    @Column(name = "USERNAME")
+    private String userName;
     @Column(name = "ACCESS_TOKEN")
     private String accessToken;
     @Column(name = "ACCESS_TOKEN_TYPE")
     private String accessTokenType;
     @Column(name = "SCOPE")
     private String scope;
-    @Column(name = "EXPRIES")
-    private int expires;
+    @Column(name = "EXPIRES")
+    private long expires;
     @Column(name = "REFRESH_TOKEN")
     private String refreshToken;
 
@@ -41,6 +43,14 @@ public class AccessToken {
 
     public void setBankId(String bankId) {
         this.bankId = bankId;
+    }
+
+    public String getUserName() {
+        return userName;
+    }
+
+    public void setUserName(String userName) {
+        this.userName = userName;
     }
 
     public String getAccessToken() {
@@ -67,11 +77,11 @@ public class AccessToken {
         this.scope = scope;
     }
 
-    public int getExpires() {
+    public long getExpires() {
         return expires;
     }
 
-    public void setExpires(int expires) {
+    public void setExpires(long expires) {
         this.expires = expires;
     }
 
