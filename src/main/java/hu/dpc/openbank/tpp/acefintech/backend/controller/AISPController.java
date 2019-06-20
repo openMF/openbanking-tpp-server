@@ -45,17 +45,17 @@ public class AISPController {
      * WSO2 error message, when BANK API not available.
      */
     private static final String BANK_NOT_WORKING_ERROR = "<am:fault xmlns:am=\"http://wso2.org/apimanager\"><am:code>101503</am:code><am:type>Status report</am:type><am:message>Runtime Error</am:message><am:description>Error connecting to the back end</am:description></am:fault>";
+    //    private static final String BANK_APIS_SUSPENDED = "<am:fault xmlns:am=\"http://wso2.org/apimanager\"><am:code>303001</am:code><am:type>Status report</am:type><am:message>Runtime Error</am:message><am:description>Currently , Address endpoint : [ Name : AccountInformationAPI--vv1_APIproductionEndpoint ] [ State : SUSPENDED ]</am:description></am:fault>";
+    private static final String BANK_APIS_SUSPENDED = "<am:fault xmlns:am=\"http://wso2.org/apimanager\"><am:code>303001</am:code>";
+    private static final String WSO2_METHOD_NOT_FOUND = "<am:fault xmlns:am=\"http://wso2.org/apimanager\"><am:code>404</am:code><am:type>Status report</am:type><am:message>Runtime Error</am:message><am:description>No matching resource found for given API Request</am:description></am:fault>";
 
     /**
      * Getting bank infomations.
-     * TODO cache results
      */
     @Autowired
     private BankRepository bankRepository;
     @Autowired
     private AccessTokenRepository accessTokenRepository;
-    @Deprecated
-    private AccessToken clientAccessToken;
 
     /**
      * Get latest user AccessToken.
@@ -65,7 +65,10 @@ public class AISPController {
      * @return
      */
     private AccessToken getLatestUserAccessToken(String userId, String bankId) {
-        return accessTokenRepository.getLatest(bankId, userId, "accounts");
+        LOG.info("getLatestUserAccessToken userId {} bankId {}", userId, bankId);
+        AccessToken accessToken = accessTokenRepository.getLatest(bankId, userId, "accounts");
+        LOG.info("AccessToken: {}", accessToken);
+        return accessToken;
     }
 
     /**
@@ -109,16 +112,6 @@ public class AISPController {
      * @param bankId
      * @return
      */
-    public String getClientAccessToken(String bankId) {
-        return getClientAccessToken(bankId, false);
-    }
-
-    /**
-     * Get or create client AccessToken
-     *
-     * @param bankId
-     * @return
-     */
     public String getClientAccessToken(String bankId, boolean force) {
         LOG.info("getClientAccessToken: bankId: {} force: {}", bankId, force);
         AccessToken accessToken = clientAccessTokenCache.get(bankId);
@@ -130,23 +123,50 @@ public class AISPController {
         if (force || null == accessToken || accessToken.isExpired()) {
             TokenManager tokenManager = getTokenManager(bankId);
             TokenResponse tokenResponse = tokenManager.getAccessTokenWithClientCredential(new String[]{"accounts"});
-            String accessTokenStr = tokenResponse.getAccessToken();
-            LOG.debug("Client AccessToken: {}", accessToken);
+            int respondeCode = tokenResponse.getHttpResponseCode();
+            if (respondeCode >= 200 && respondeCode < 300) {
 
-            // Save accessToken for later usage
-            accessToken = new AccessToken();
-            accessToken.setAccessToken(accessTokenStr);
-            accessToken.setAccessTokenType("client");
-            accessToken.setScope("accounts");
-            accessToken.setExpires(tokenResponse.getExpiresIn());
-            accessToken.setBankId(bankId);
+                String accessTokenStr = tokenResponse.getAccessToken();
+                LOG.debug("Client AccessToken: {}", accessTokenStr);
 
-            LOG.info("New Access token {} is expired {} expires {} current {}", accessToken.getAccessToken(), accessToken.isExpired(), accessToken.getExpires(), System.currentTimeMillis());
+                // Save accessToken for later usage
+                accessToken = new AccessToken();
+                accessToken.setAccessToken(accessTokenStr);
+                accessToken.setAccessTokenType("client");
+                accessToken.setScope("accounts");
+                accessToken.setExpires(tokenResponse.getExpiresIn());
+                accessToken.setBankId(bankId);
 
-            clientAccessTokenCache.put(bankId, accessToken);
+                LOG.info("New Access token {} is expired {} expires {} current {}", accessToken.getAccessToken(), accessToken.isExpired(), accessToken.getExpires(), System.currentTimeMillis());
+
+                clientAccessTokenCache.put(bankId, accessToken);
+            } else {
+                throw new APICallException(tokenResponse.getRawContent());
+            }
         }
 
         return accessToken.getAccessToken();
+    }
+
+    /**
+     * Handle WSO2 errors
+     *
+     * @param content
+     */
+    public void checkWSO2Errors(String content) {
+        if (null != content && content.startsWith("<")) {
+            LOG.error("Respond in XML, it's mean something error occured! {}", content);
+            if (BANK_NOT_WORKING_ERROR.equals(content)) {
+                throw new APICallException("API gateway cannot connect to BANK backend!");
+            }
+            if (content.startsWith(BANK_APIS_SUSPENDED)) {
+                throw new APICallException("API gateway suspended!");
+            }
+            if (WSO2_METHOD_NOT_FOUND.equals(content)) {
+                throw new APICallException("API method not found!");
+            }
+            throw new APICallException("API gateway problem!");
+        }
     }
 
 
@@ -163,7 +183,7 @@ public class AISPController {
         try {
             for (int ii = tryCount; ii-- > 0; ) {
                 String accessToken = getClientAccessToken(bankId, force);
-                BankInfo bankInfo = tokenManagerCache.get(bankId).getOauthconfig().getBankInfo();
+                BankInfo bankInfo = getTokenManager(bankId).getOauthconfig().getBankInfo();
                 // Setup HTTP headers
                 HashMap<String, String> headers = new HashMap<>();
                 headers.put("Authorization", "Bearer " + accessToken);
@@ -173,15 +193,7 @@ public class AISPController {
 
                 // Sometimes WSO2 respond errors in xml
                 String content = httpResponse.getContent().trim();
-                if (null != content && content.startsWith("<")) {
-                    LOG.error("Respond in XML, it's mean something error occured! {}", content);
-                    if (BANK_NOT_WORKING_ERROR.equals(content)) {
-                        throw new APICallException("API gateway cannot connect to BANK backend!");
-                    }
-                    // TODO
-                    // <am:fault xmlns:am="http://wso2.org/apimanager"><am:code>101503</am:code><am:type>Status report</am:type><am:message>Runtime Error</am:message><am:description>Error connecting to the back end</am:description></am:fault>
-                    throw new APICallException("API gateway problem!");
-                }
+                checkWSO2Errors(content);
                 int respondCode = httpResponse.getResponseCode();
                 if (respondCode >= 200 && respondCode < 300) {
                     // TODO Parse response & return consentId
@@ -207,19 +219,20 @@ public class AISPController {
      * @throws OAuthAuthorizationRequiredException
      */
     public String userAccessTokenIsValid(String bankId, String userName) {
-        AccessToken userAccessToken = getLatestUserAccessToken(bankId, userName);
+        LOG.info("userAccessTokenIsValid: bankId {} userName {}", bankId, userName);
+        AccessToken userAccessToken = getLatestUserAccessToken(userName, bankId);
         if (null == userAccessToken) {
             String consentId = getConsentId(bankId);
             LOG.info("No user AccessToken exists. OAuth authorization required! ConsentID: [" + consentId + "]");
             throw new OAuthAuthorizationRequiredException(consentId);
         }
 
-        TokenManager tokenManager = tokenManagerCache.get(bankId);
+        TokenManager tokenManager = getTokenManager(bankId);
         if (userAccessToken.isExpired()) {
             LOG.info("User AccessToken is expired, trying refresh accessToken: [{}] refreshToken: [{}]", userAccessToken.getAccessToken(), userAccessToken.getRefreshToken());
             TokenResponse refreshToken = tokenManager.refreshToken(userAccessToken.getRefreshToken());
 
-            if (HttpsURLConnection.HTTP_OK != refreshToken.getHttpResponseCode()) {
+            if (HttpsURLConnection.HTTP_OK == refreshToken.getHttpResponseCode()) {
                 userAccessToken = new AccessToken();
                 userAccessToken.setAccessToken(refreshToken.getAccessToken());
                 userAccessToken.setAccessTokenType("user");
@@ -252,22 +265,18 @@ public class AISPController {
         LOG.info("BankID: {} User {}", bankId, user);
         try {
             String userAccessToken = userAccessTokenIsValid(bankId, user.getUsername());
-            BankInfo bankInfo = tokenManagerCache.get(bankId).getOauthconfig().getBankInfo();
+            BankInfo bankInfo = getTokenManager(bankId).getOauthconfig().getBankInfo();
 
             // Setup HTTP headers
             HashMap<String, String> headers = new HashMap<>();
             headers.put("Authorization", "Bearer " + userAccessToken);
             headers.put("x-fapi-interaction-id", UUID.randomUUID().toString());
             // get ConsentID
-            HttpResponse httpResponse = doPost(new URL(bankInfo.getAccountsUrl() + "/accounts"), headers, "{'Data':'valami'}");
+            HttpResponse httpResponse = doGet(new URL(bankInfo.getAccountsUrl() + "/accounts"), headers, null);
 
             // Sometimes WSO2 respond errors in xml
             String content = httpResponse.getContent().trim();
-            if (null != content && content.startsWith("<")) {
-                LOG.error("Respond in XML, it's mean something error occured! {}", content);
-                // <am:fault xmlns:am="http://wso2.org/apimanager"><am:code>101503</am:code><am:type>Status report</am:type><am:message>Runtime Error</am:message><am:description>Error connecting to the back end</am:description></am:fault>
-                return new ResponseEntity(content, HttpStatus.BAD_REQUEST);
-            }
+            checkWSO2Errors(content);
             int respondCode = httpResponse.getResponseCode();
             if (!(respondCode >= 200 && respondCode < 300)) {
                 LOG.error("Respond code {}; respond: [{}]", respondCode, content);
@@ -283,6 +292,31 @@ public class AISPController {
             LOG.error("Something went wrong!", e);
             return new ResponseEntity(e.getLocalizedMessage(), HttpStatus.BAD_REQUEST);
         }
+    }
+
+
+    @GetMapping(path = "/token-code/{Code}", produces = "application/json")
+    public ResponseEntity getTokenCode(@RequestHeader(value = "x-tpp-bankid") String bankId, @AuthenticationPrincipal User user, @PathVariable("Code") String code) {
+        TokenManager tokenManager = getTokenManager(bankId);
+        TokenResponse accessTokenResponse = tokenManager.getAccessTokenFromCode(code);
+        int responseCode = accessTokenResponse.getHttpResponseCode();
+        if (responseCode >= 200 && responseCode < 300) {
+            AccessToken userAccessToken;
+            userAccessToken = new AccessToken();
+            userAccessToken.setAccessToken(accessTokenResponse.getAccessToken());
+            userAccessToken.setAccessTokenType("user");
+            userAccessToken.setScope("accounts");
+            userAccessToken.setExpires(accessTokenResponse.getJwtExpires());
+            userAccessToken.setRefreshToken(accessTokenResponse.getRefreshToken());
+            userAccessToken.setBankId(bankId);
+            userAccessToken.setUserName(user.getUsername());
+            accessTokenRepository.save(userAccessToken);
+            return new ResponseEntity("", HttpStatus.OK);
+        }
+        LOG.warn("Code exchange not succeeded. HTTP[{}] RAWResponse [{}]", responseCode, accessTokenResponse.getRawContent());
+        String consentId = getConsentId(bankId);
+        LOG.info("No user AccessToken exists. OAuth authorization required! ConsentID: [" + consentId + "]");
+        throw new OAuthAuthorizationRequiredException(consentId);
     }
 
 
@@ -382,5 +416,52 @@ public class AISPController {
         return httpResponse;
     }
 
+    /**
+     * Execute token POST request.
+     *
+     * @return
+     */
+    public HttpResponse doGet(URL url, HashMap<String, String> headerParams, String jsonContentData) {
+        HttpResponse httpResponse = new HttpResponse();
+        int responseCode = -1;
+        try {
+            HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
+            HttpsTrust.INSTANCE.trust(conn);
+            conn.setReadTimeout(10000);
+            conn.setConnectTimeout(15000);
+            conn.setRequestMethod("GET");
+            conn.setDoInput(true);
+            conn.setDoOutput(false);
+
+            conn.setRequestProperty("Accept", "application/json");
+            conn.setRequestProperty("Content-Type", "application/json");
+            for (Map.Entry<String, String> entry : headerParams.entrySet()) {
+                conn.setRequestProperty(entry.getKey(), entry.getValue());
+            }
+
+
+            responseCode = conn.getResponseCode();
+
+            ObjectMapper mapper = new ObjectMapper();
+            String response = "";
+            String line;
+            BufferedReader br = new BufferedReader(new InputStreamReader((responseCode == HttpsURLConnection.HTTP_OK) ? conn.getInputStream() : conn.getErrorStream()));
+            while ((line = br.readLine()) != null) {
+                response += line;
+            }
+            conn.disconnect();
+
+
+            httpResponse.setResponseCode(responseCode);
+            httpResponse.setContent(response);
+            return httpResponse;
+        } catch (IOException e) {
+            httpResponse.setResponseCode(-1);
+            httpResponse.setContent(e.getLocalizedMessage());
+            e.printStackTrace();
+        }
+
+        return httpResponse;
+    }
 
 }
