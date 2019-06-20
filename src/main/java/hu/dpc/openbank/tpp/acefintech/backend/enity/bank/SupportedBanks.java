@@ -7,7 +7,7 @@ import java.util.List;
 
 public class SupportedBanks {
     @JsonProperty("BankInfo")
-    private List<BankInfo> bankInfoList = new ArrayList<BankInfo>();
+    private List<BankInfo> bankInfoList = new ArrayList<>();
 
     public void add(BankInfo bankInfo) {
         bankInfoList.add(bankInfo);

@@ -38,9 +38,9 @@ public class TokenResponse {
     private String subject;
     @JsonIgnore
     private long jwtExpires;
-    @JsonIgnore(true)
+    @JsonIgnore
     private int httpResponseCode = -1;
-    @JsonIgnore(true)
+    @JsonIgnore
     private String rawContent;
 
     public String getAccessToken() {

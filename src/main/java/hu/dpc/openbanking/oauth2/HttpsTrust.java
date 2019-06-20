@@ -22,7 +22,7 @@ public class HttpsTrust {
     private final SSLSocketFactory socketFactory;
     private final HostnameVerifier hostnameVerifier;
 
-    public HttpsTrust(Ssl context) {
+    private HttpsTrust(Ssl context) {
         this.socketFactory = createSocketFactory(context);
         this.hostnameVerifier = createHostnameVerifier();
     }

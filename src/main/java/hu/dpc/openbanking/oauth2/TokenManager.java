@@ -10,7 +10,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.HttpsURLConnection;
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -22,13 +25,13 @@ public class TokenManager {
     private static final Logger LOG = LoggerFactory.getLogger(AISPController.class);
 
 
-    private OAuthConfig oauthconfig;
+    private final OAuthConfig oauthconfig;
 
     public TokenManager(OAuthConfig config) {
         this.oauthconfig = config;
     }
 
-    private static String getPostDataString(HashMap<String, String> params) throws UnsupportedEncodingException {
+    private static String getPostDataString(HashMap<String, String> params) {
         StringBuilder result = new StringBuilder();
         boolean first = true;
         for (Map.Entry<String, String> entry : params.entrySet()) {
@@ -70,7 +73,7 @@ public class TokenManager {
      * @param postDataParams required params.k
      * @return
      */
-    public TokenResponse doPost(HashMap<String, String> postDataParams) {
+    private TokenResponse doPost(HashMap<String, String> postDataParams) {
         int responseCode = -1;
         try {
             URL url = oauthconfig.getTokenURL();
@@ -101,17 +104,10 @@ public class TokenManager {
 
             responseCode = conn.getResponseCode();
             LOG.info("Response code: {}", responseCode);
-
-            String response = "";
-            String line;
-            BufferedReader br = new BufferedReader(new InputStreamReader((responseCode == HttpsURLConnection.HTTP_OK) ? conn.getInputStream() : conn.getErrorStream()));
-            while ((line = br.readLine()) != null) {
-                response += line;
-            }
-            conn.disconnect();
+            String response = HttpHelper.getResponseContent(conn);
             LOG.info("Response: [{}]", response);
 
-            if (null != response && response.startsWith("<")) {
+            if (response.startsWith("<")) {
                 // Response is not JSON
                 TokenResponse result = new TokenResponse();
                 result.setHttpResponseCode(responseCode);
@@ -146,7 +142,7 @@ public class TokenManager {
     }
 
     /**
-     * <pre>curl -k -X doPost "https://localhost:8243/token"
+     * <pre>curl -k -X POST "https://localhost:8243/token"
      *           -H "Content-Type: application/x-www-form-urlencoded"
      *           -H "Authorization: Basic bllkSmFfS0huaWNWWENZRU1OU2dLVkNpQ3p3YTpHWmhXOFlDZkM4VEM0dTJHYVJYU1hsY1JOR3dh"
      *           -d "grant_type=client_credentials"
@@ -155,7 +151,7 @@ public class TokenManager {
      * @return
      */
     public TokenResponse getAccessTokenWithClientCredential(String[] scopes) {
-        HashMap<String, String> postDataParams = new HashMap<String, String>();
+        HashMap<String, String> postDataParams = new HashMap<>();
         postDataParams.put("grant_type", "client_credentials");
         postDataParams.put("scope", String.join(" ", scopes));
 
@@ -163,7 +159,7 @@ public class TokenManager {
     }
 
     /**
-     * <pre>curl -k -v -X doPost "https://localhost:8243/token?
+     * <pre>curl -k -v -X POST "https://localhost:8243/token?
      *                               code=cc0970dd-476a-381e-bdd3-84bf69091932
      *                              &grant_type=authorization_code
      *                              &redirect_uri=http://acefintech.org/callback
@@ -175,7 +171,7 @@ public class TokenManager {
      * @return
      */
     public TokenResponse getAccessTokenFromCode(String code) {
-        HashMap<String, String> postDataParams = new HashMap<String, String>();
+        HashMap<String, String> postDataParams = new HashMap<>();
         postDataParams.put("code", code);
         postDataParams.put("client_id", oauthconfig.getApiKey());
         postDataParams.put("grant_type", "authorization_code");
@@ -185,7 +181,7 @@ public class TokenManager {
     }
 
     /**
-     * <pre>curl -k -v -X doPost "https://localhost:8243/token?
+     * <pre>curl -k -v -X POST "https://localhost:8243/token?
      *                  refresh_token=e5fd4066-d3de-33cb-a5e5-3b50c36225ec
      *                 &grant_type=refresh_token
      *                 &redirect_uri=http://acefintech.org/callback
@@ -197,7 +193,7 @@ public class TokenManager {
      * @return
      */
     public TokenResponse refreshToken(String token) {
-        HashMap<String, String> postDataParams = new HashMap<String, String>();
+        HashMap<String, String> postDataParams = new HashMap<>();
         postDataParams.put("client_id", oauthconfig.getApiKey());
         postDataParams.put("grant_type", "refresh_token");
         postDataParams.put("refresh_token", token);

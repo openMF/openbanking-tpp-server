@@ -12,8 +12,11 @@ import javax.sql.DataSource;
 @Configuration
 @EnableWebSecurity
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
-    @Autowired
-    private DataSource dataSource;
+    private final DataSource dataSource;
+
+    public WebSecurityConfig(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
@@ -36,16 +39,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     @Autowired
     public void configureGlobal(AuthenticationManagerBuilder auth)
             throws Exception {
-//        User.UserBuilder users = User.withDefaultPasswordEncoder();
         auth.jdbcAuthentication()
                 .dataSource(dataSource);
-//                .withDefaultSchema().withUser(users.username("tppuser").password("password").roles("USER"));
-/*
-        auth.inMemoryAuthentication()
-                .withUser("admin")
-                .password("{noop}password")
-                .roles("USER");
- */
     }
 
 }

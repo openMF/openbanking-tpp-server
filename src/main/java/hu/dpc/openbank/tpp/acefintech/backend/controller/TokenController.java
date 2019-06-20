@@ -25,7 +25,8 @@ public class TokenController extends WSO2Controller {
         int responseCode = accessTokenResponse.getHttpResponseCode();
         if (responseCode >= 200 && responseCode < 300) {
             createAndSaveUserAccessToken(accessTokenResponse, bankId, user.getUsername());
-            return new ResponseEntity("", HttpStatus.OK);
+
+            return new ResponseEntity<>("", HttpStatus.OK);
         }
         LOG.warn("Code exchange not succeeded. HTTP[{}] RAWResponse [{}]", responseCode, accessTokenResponse.getRawContent());
         String consentId = getConsentId(bankId);
