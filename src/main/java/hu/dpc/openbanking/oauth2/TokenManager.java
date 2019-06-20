@@ -22,10 +22,10 @@ public class TokenManager {
     private static final Logger LOG = LoggerFactory.getLogger(AISPController.class);
 
 
-    private OAuthConfig config;
+    private OAuthConfig oauthconfig;
 
     public TokenManager(OAuthConfig config) {
-        this.config = config;
+        this.oauthconfig = config;
     }
 
     private static String getPostDataString(HashMap<String, String> params) throws UnsupportedEncodingException {
@@ -45,57 +45,6 @@ public class TokenManager {
         return result.toString();
     }
 
-    /*
-        public static void doit() throws MalformedURLException {
-            OAuthConfig oauthConfig = new OAuthConfig();
-            oauthConfig.setApiKey(CLIENT_ID);
-            oauthConfig.setApiSecret(CLIENT_SECRET);
-            oauthConfig.setTokenURL("https://localhost:8243/token");
-            oauthConfig.setSubject("acefintech");
-            oauthConfig.setCallbackURL("http://acefintech.org/callback");
-
-            TokenManager tokenManager = new TokenManager(oauthConfig);
-
-            String[] scopes = new String[]{"accounts", "openid"};
-            Arrays.sort(scopes);
-            TokenResponse token = tokenManager.getAccessTokenWithClientCredential(scopes);
-            debugToken(token);
-            if (token.getHttpResponseCode() == HttpsURLConnection.HTTP_OK) {
-                try {
-                    DecodedJWT jwt = JWT.decode(token.getIdToken());
-                    String subject = jwt.getSubject();
-                    if (null != subject && !oauthConfig.getSubject().equals(subject)) {
-                        System.out.println("Subject not equals");
-                    }
-                } catch (JWTDecodeException exception) {
-                    //Invalid token
-                }
-            }
-
-            String[] tokenScopes = token.getScope().split(" ");
-            Arrays.sort(tokenScopes);
-
-            for (String scope : scopes) {
-                boolean requestedScopeFound = false;
-                for (String tokenScope : tokenScopes) {
-                    if (scope.equals(tokenScope)) {
-                        requestedScopeFound = true;
-                        break;
-                    }
-                }
-                if (!requestedScopeFound) {
-                    System.err.println("Requested scope not found! [" + scope + "]");
-                }
-            }
-
-            TokenResponse userLevelAccessToken = tokenManager.getAccessTokenFromCode("83710e06-7e03-355d-8dd3-937ab320bdc8");
-            debugToken(userLevelAccessToken);
-            TokenResponse refreshToken = tokenManager.refreshToken("83710e06-7e03-355d-8dd3-937ab320bdc8");
-            debugToken(refreshToken);
-        }
-
-
-     */
     private static void debugToken(TokenResponse token) {
         System.out.println("HTTP: " + token.getHttpResponseCode());
         System.out.println("Access token: " + token.getAccessToken());
@@ -111,6 +60,10 @@ public class TokenManager {
 
     }
 
+    public OAuthConfig getOauthconfig() {
+        return oauthconfig;
+    }
+
     /**
      * Execute token POST request.
      *
@@ -120,7 +73,7 @@ public class TokenManager {
     public TokenResponse doPost(HashMap<String, String> postDataParams) {
         int responseCode = -1;
         try {
-            URL url = config.getTokenURL();
+            URL url = oauthconfig.getTokenURL();
 
             LOG.info("Call {}", url.toString());
             HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
@@ -134,7 +87,7 @@ public class TokenManager {
             conn.setRequestProperty("Accept", "application/json");
             conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
 
-            String authorization = Base64.getEncoder().encodeToString((config.getApiKey() + ':' + config.getApiSecret()).getBytes());
+            String authorization = Base64.getEncoder().encodeToString((oauthconfig.getApiKey() + ':' + oauthconfig.getApiSecret()).getBytes());
             conn.setRequestProperty("Authorization", "Basic " + authorization);
 
             OutputStream os = conn.getOutputStream();
@@ -149,7 +102,6 @@ public class TokenManager {
             responseCode = conn.getResponseCode();
             LOG.info("Response code: {}", responseCode);
 
-            ObjectMapper mapper = new ObjectMapper();
             String response = "";
             String line;
             BufferedReader br = new BufferedReader(new InputStreamReader((responseCode == HttpsURLConnection.HTTP_OK) ? conn.getInputStream() : conn.getErrorStream()));
@@ -159,16 +111,27 @@ public class TokenManager {
             conn.disconnect();
             LOG.info("Response: [{}]", response);
 
+            if (null != response && response.startsWith("<")) {
+                // Response is not JSON
+                TokenResponse result = new TokenResponse();
+                result.setHttpResponseCode(responseCode);
+                result.setRawContent(response);
+                return result;
+            }
+            ObjectMapper mapper = new ObjectMapper();
             TokenResponse result = mapper.readValue(response, TokenResponse.class);
+            result.setRawContent(response);
             result.setHttpResponseCode(responseCode);
 
             if (responseCode == HttpsURLConnection.HTTP_OK) {
-                try {
-                    DecodedJWT jwt = JWT.decode(result.getIdToken());
-                    result.setSubject(jwt.getSubject());
-                    result.setJwtExpires(jwt.getExpiresAt().getTime() / 1000);
-                } catch (JWTDecodeException exception) {
-                    //Invalid token
+                if (null != result.getIdToken()) {
+                    try {
+                        DecodedJWT jwt = JWT.decode(result.getIdToken());
+                        result.setSubject(jwt.getSubject());
+                        result.setJwtExpires(jwt.getExpiresAt().getTime());
+                    } catch (JWTDecodeException exception) {
+                        //Invalid token
+                    }
                 }
             }
 
@@ -214,9 +177,9 @@ public class TokenManager {
     public TokenResponse getAccessTokenFromCode(String code) {
         HashMap<String, String> postDataParams = new HashMap<String, String>();
         postDataParams.put("code", code);
-        postDataParams.put("client_id", config.getApiKey());
+        postDataParams.put("client_id", oauthconfig.getApiKey());
         postDataParams.put("grant_type", "authorization_code");
-        postDataParams.put("redirect_uri", config.getCallbackURL());
+        postDataParams.put("redirect_uri", oauthconfig.getCallbackURL());
 
         return doPost(postDataParams);
     }
@@ -235,10 +198,10 @@ public class TokenManager {
      */
     public TokenResponse refreshToken(String token) {
         HashMap<String, String> postDataParams = new HashMap<String, String>();
-        postDataParams.put("client_id", config.getApiKey());
+        postDataParams.put("client_id", oauthconfig.getApiKey());
         postDataParams.put("grant_type", "refresh_token");
         postDataParams.put("refresh_token", token);
-        postDataParams.put("redirect_uri", config.getCallbackURL());
+        postDataParams.put("redirect_uri", oauthconfig.getCallbackURL());
 
         return doPost(postDataParams);
     }

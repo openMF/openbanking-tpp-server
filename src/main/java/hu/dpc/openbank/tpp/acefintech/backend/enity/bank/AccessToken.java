@@ -1,15 +1,13 @@
 package hu.dpc.openbank.tpp.acefintech.backend.enity.bank;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 
 @Entity
 @Table(name = "ACCESS_TOKEN")
 public class AccessToken {
     @Id
     @Column(name = "ID")
+    @GeneratedValue
     private int id;
     @Column(name = "BANK_ID")
     private String bankId;
@@ -91,5 +89,14 @@ public class AccessToken {
 
     public void setRefreshToken(String refreshToken) {
         this.refreshToken = refreshToken;
+    }
+
+    /**
+     * Token is expired?
+     *
+     * @return
+     */
+    public boolean isExpired() {
+        return (System.currentTimeMillis() - 3000) > expires;
     }
 }

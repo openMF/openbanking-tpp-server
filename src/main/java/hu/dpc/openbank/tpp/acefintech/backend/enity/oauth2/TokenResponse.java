@@ -38,9 +38,10 @@ public class TokenResponse {
     private String subject;
     @JsonIgnore
     private long jwtExpires;
-
     @JsonIgnore(true)
     private int httpResponseCode = -1;
+    @JsonIgnore(true)
+    private String rawContent;
 
     public String getAccessToken() {
         return accessToken;
@@ -87,7 +88,7 @@ public class TokenResponse {
     }
 
     public void setExpiresIn(long expiresIn) {
-        this.expiresIn = expiresIn;
+        this.expiresIn = (expiresIn * 1000) + System.currentTimeMillis();
     }
 
     public int getHttpResponseCode() {
@@ -128,5 +129,13 @@ public class TokenResponse {
 
     public void setJwtExpires(long jwtExpires) {
         this.jwtExpires = jwtExpires;
+    }
+
+    public String getRawContent() {
+        return rawContent;
+    }
+
+    public void setRawContent(String rawContent) {
+        this.rawContent = rawContent;
     }
 }

@@ -24,20 +24,4 @@ public interface AccessTokenRepository extends JpaRepository<AccessToken, String
             "      order by EXPIRES desc)\n" +
             "limit 1", nativeQuery = true)
     AccessToken getLatest(String bankId, String userId, String scope);
-
-    /**
-     * Get latest client (tpp) level access token for a desired scope.
-     * @param bankId
-     * @param scope
-     * @return
-     */
-    @Query(value = "select *\n" +
-            "from (select a.*\n" +
-            "      from ACCESS_TOKEN a\n" +
-            "      where a.BANK_ID = ?1\n" +
-            "        and a.SCOPE = ?2\n" +
-            "        and a.ACCESS_TOKEN_TYPE = 'client'\n" +
-            "      order by EXPIRES desc)\n" +
-            "limit 1", nativeQuery = true)
-    AccessToken getLatest(String bankId, String scope);
 }

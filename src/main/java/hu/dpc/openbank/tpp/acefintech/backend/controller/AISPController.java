@@ -9,14 +9,14 @@ import hu.dpc.openbank.tpp.acefintech.backend.enity.aisp.AccountResponseData;
 import hu.dpc.openbank.tpp.acefintech.backend.enity.bank.AccessToken;
 import hu.dpc.openbank.tpp.acefintech.backend.enity.bank.BankInfo;
 import hu.dpc.openbank.tpp.acefintech.backend.enity.oauth2.TokenResponse;
-import hu.dpc.openbank.tpp.acefintech.backend.repository.AccessTokenRepository;
-import hu.dpc.openbank.tpp.acefintech.backend.repository.BankRepository;
+import hu.dpc.openbank.tpp.acefintech.backend.repository.*;
 import hu.dpc.openbanking.oauth2.HttpsTrust;
 import hu.dpc.openbanking.oauth2.OAuthConfig;
 import hu.dpc.openbanking.oauth2.TokenManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -24,7 +24,9 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.web.bind.annotation.*;
 
 import javax.net.ssl.HttpsURLConnection;
+import javax.persistence.EntityNotFoundException;
 import java.io.*;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -36,23 +38,115 @@ import java.util.UUID;
 public class AISPController {
 
     private static final Logger LOG = LoggerFactory.getLogger(AISPController.class);
+    private static final HashMap<String, TokenManager> tokenManagerCache = new HashMap<>();
+    private static final HashMap<String, AccessToken> clientAccessTokenCache = new HashMap<>();
+
+    /**
+     * WSO2 error message, when BANK API not available.
+     */
+    private static final String BANK_NOT_WORKING_ERROR = "<am:fault xmlns:am=\"http://wso2.org/apimanager\"><am:code>101503</am:code><am:type>Status report</am:type><am:message>Runtime Error</am:message><am:description>Error connecting to the back end</am:description></am:fault>";
+
     /**
      * Getting bank infomations.
      * TODO cache results
      */
     @Autowired
     private BankRepository bankRepository;
-
     @Autowired
     private AccessTokenRepository accessTokenRepository;
+    @Deprecated
+    private AccessToken clientAccessToken;
 
-
+    /**
+     * Get latest user AccessToken.
+     *
+     * @param userId
+     * @param bankId
+     * @return
+     */
     private AccessToken getLatestUserAccessToken(String userId, String bankId) {
         return accessTokenRepository.getLatest(bankId, userId, "accounts");
     }
 
-    private AccessToken getLatestAccessToken(String bankId) {
-        return accessTokenRepository.getLatest(bankId, "accounts");
+    /**
+     * TokenManager beszerzése és cachelése
+     *
+     * @param bankId
+     * @return
+     * @throws BankIDNotFoundException
+     * @throws BankConfigException
+     */
+    public TokenManager getTokenManager(String bankId) {
+        LOG.info("BankID: {}", bankId);
+
+        TokenManager tokenManager = tokenManagerCache.get(bankId);
+        if (null == tokenManager) {
+            try {
+                BankInfo bankInfo = bankRepository.getOne(bankId);
+                if (null == bankInfo || !bankId.equals(bankInfo.getBankId())) {
+                    // Testing result
+                    throw new BankIDNotFoundException(bankId);
+                }
+                OAuthConfig oAuthConfig = new OAuthConfig(bankInfo);
+                tokenManager = new TokenManager(oAuthConfig);
+                tokenManagerCache.put(bankId, tokenManager);
+            } catch (EntityNotFoundException e) {
+                // BankId not found
+                LOG.error("Bank ID not found! [" + bankId + "]");
+                throw new BankIDNotFoundException(bankId);
+            } catch (MalformedURLException e) {
+                LOG.error("Bank config error!", e);
+                throw new BankConfigException(e.getLocalizedMessage());
+            }
+        }
+        return tokenManager;
+    }
+
+
+    /**
+     * Get or create client AccessToken
+     *
+     * @param bankId
+     * @return
+     */
+    public String getClientAccessToken(String bankId) {
+        return getClientAccessToken(bankId, false);
+    }
+
+    /**
+     * Get or create client AccessToken
+     *
+     * @param bankId
+     * @return
+     */
+    public String getClientAccessToken(String bankId, boolean force) {
+        LOG.info("getClientAccessToken: bankId: {} force: {}", bankId, force);
+        AccessToken accessToken = clientAccessTokenCache.get(bankId);
+        LOG.info("Access token {} found in cache for bank {}", (accessToken == null ? "not" : ""), bankId);
+        if (null != accessToken) {
+            LOG.info("Cached Access token {} is expired {} expires {} current {}", accessToken.getAccessToken(), accessToken.isExpired(), accessToken.getExpires(), System.currentTimeMillis());
+        }
+
+        if (force || null == accessToken || accessToken.isExpired()) {
+            TokenManager tokenManager = getTokenManager(bankId);
+            TokenResponse tokenResponse = tokenManager.getAccessTokenWithClientCredential(new String[]{"accounts"});
+            String accessTokenStr = tokenResponse.getAccessToken();
+            LOG.debug("Client AccessToken: {}", accessToken);
+
+            // Save accessToken for later usage
+            accessToken = new AccessToken();
+            accessToken.setAccessToken(accessTokenStr);
+            accessToken.setAccessTokenType("client");
+            accessToken.setScope("accounts");
+            accessToken.setExpires(tokenResponse.getExpiresIn());
+            accessToken.setBankId(bankId);
+
+            LOG.info("New Access token {} is expired {} expires {} current {}", accessToken.getAccessToken(), accessToken.isExpired(), accessToken.getExpires(), System.currentTimeMillis());
+
+            clientAccessTokenCache.put(bankId, accessToken);
+        }
+
+        return accessToken.getAccessToken();
     }
 
 
@@ -63,77 +157,87 @@ public class AISPController {
      * @return consentId if request it was not success return empty.
      */
     public String getConsentId(String bankId) {
-        LOG.info("BankID: {}", bankId);
+        int tryCount = 3;
+        boolean force = false;
 
         try {
-            BankInfo bankInfo = bankRepository.getOne(bankId);
-            if (bankId.equals(bankInfo.getBankId())) {
-                // Testing result
-            }
+            for (int ii = tryCount; ii-- > 0; ) {
+                String accessToken = getClientAccessToken(bankId, force);
+                BankInfo bankInfo = tokenManagerCache.get(bankId).getOauthconfig().getBankInfo();
+                // Setup HTTP headers
+                HashMap<String, String> headers = new HashMap<>();
+                headers.put("Authorization", "Bearer " + accessToken);
+                headers.put("x-fapi-interaction-id", UUID.randomUUID().toString());
+                // get ConsentID
+                HttpResponse httpResponse = doPost(new URL(bankInfo.getAccountsUrl() + "/account-initiations"), headers, "{'Data':'valami'}");
 
-            // TODO Checking previous accessToken is still valid and use that
-            String accessToken = null;
-            AccessToken prevAccessToken = getLatestAccessToken(bankId);
-            if (null != prevAccessToken) {
-                LOG.info("Client level access token exists: {} is still valid {} {} {}", prevAccessToken.getAccessToken(), (System.currentTimeMillis() / 1000), prevAccessToken.getExpires(), (System.currentTimeMillis() / 1000) < prevAccessToken.getExpires());
-                if ((System.currentTimeMillis() / 1000) < prevAccessToken.getExpires()) {
-                    LOG.info("Latest access token IS STILL valid!");
-                    accessToken = prevAccessToken.getAccessToken();
-                } else {
-                    LOG.info("Latest access token expired!");
-                    prevAccessToken = null;
+                // Sometimes WSO2 respond errors in xml
+                String content = httpResponse.getContent().trim();
+                if (null != content && content.startsWith("<")) {
+                    LOG.error("Respond in XML, it's mean something error occured! {}", content);
+                    if (BANK_NOT_WORKING_ERROR.equals(content)) {
+                        throw new APICallException("API gateway cannot connect to BANK backend!");
+                    }
+                    // TODO
+                    // <am:fault xmlns:am="http://wso2.org/apimanager"><am:code>101503</am:code><am:type>Status report</am:type><am:message>Runtime Error</am:message><am:description>Error connecting to the back end</am:description></am:fault>
+                    throw new APICallException("API gateway problem!");
                 }
-            } else {
-                LOG.info("No previous level access token exists!");
+                int respondCode = httpResponse.getResponseCode();
+                if (respondCode >= 200 && respondCode < 300) {
+                    // TODO Parse response & return consentId
+                    LOG.error("Respond code {}; respond: [{}]", respondCode, content);
+                    return "ConsentId:12345";
+                }
+                force = true;
             }
 
-            if (null == prevAccessToken) {
-                // Create OAuthConfig
-                OAuthConfig oAuthConfig = new OAuthConfig(bankInfo);
-                // Create TokenManager
-                TokenManager tokenManager = new TokenManager(oAuthConfig);
-
-                // Get new AccessToken
-                TokenResponse tokenResponse = tokenManager.getAccessTokenWithClientCredential(new String[]{"accounts"});
-                accessToken = tokenResponse.getAccessToken();
-                LOG.debug("AccessToken: {}", accessToken);
-
-                // Save accessToken for later usage
-                AccessToken newAccessToken = new AccessToken();
-                newAccessToken.setAccessToken(accessToken);
-                newAccessToken.setAccessTokenType("client");
-                newAccessToken.setScope("accounts");
-                newAccessToken.setExpires(tokenResponse.getJwtExpires());
-                newAccessToken.setBankId(bankId);
-                accessTokenRepository.save(newAccessToken);
-            }
-
-            // Setup HTTP headers
-            HashMap<String, String> headers = new HashMap<>();
-            headers.put("Authorization", "Bearer " + accessToken);
-            headers.put("x-fapi-interaction-id", UUID.randomUUID().toString());
-            // get ConsentID
-            HttpResponse httpResponse = doPost(new URL(bankInfo.getAccountsUrl() + "/account-initiations"), headers, "{'Data':'valami'}");
-
-            // Sometimes WSO2 respond errors in xml
-            String content = httpResponse.getContent().trim();
-            if (null != content && content.startsWith("<")) {
-                LOG.error("Respond in XML, it's mean something error occured! {}", content);
-                // <am:fault xmlns:am="http://wso2.org/apimanager"><am:code>101503</am:code><am:type>Status report</am:type><am:message>Runtime Error</am:message><am:description>Error connecting to the back end</am:description></am:fault>
-                return "";
-            }
-            int respondCode = httpResponse.getResponseCode();
-            if (!(respondCode >= 200 && respondCode < 300)) {
-                LOG.error("Respond code {}; respond: [{}]", respondCode, content);
-                return "ConsentId:12345";
-            }
-
-            // TODO Parse response & return consentId
-            return "";
-        } catch (Throwable e) {
-            LOG.error("Something went wrong!", e);
-            return "";
+            throw new APICallException("ConsentID request fails!");
+        } catch (MalformedURLException mue) {
+            LOG.error("URL problems!", mue);
+            throw new BankConfigException(mue.getLocalizedMessage());
         }
+    }
+
+
+    /**
+     * Check user AccessToken is valid and not expired.
+     *
+     * @param bankId
+     * @param userName
+     * @throws OAuthAuthorizationRequiredException
+     */
+    public String userAccessTokenIsValid(String bankId, String userName) {
+        AccessToken userAccessToken = getLatestUserAccessToken(bankId, userName);
+        if (null == userAccessToken) {
+            String consentId = getConsentId(bankId);
+            LOG.info("No user AccessToken exists. OAuth authorization required! ConsentID: [" + consentId + "]");
+            throw new OAuthAuthorizationRequiredException(consentId);
+        }
+
+        TokenManager tokenManager = tokenManagerCache.get(bankId);
+        if (userAccessToken.isExpired()) {
+            LOG.info("User AccessToken is expired, trying refresh accessToken: [{}] refreshToken: [{}]", userAccessToken.getAccessToken(), userAccessToken.getRefreshToken());
+            TokenResponse refreshToken = tokenManager.refreshToken(userAccessToken.getRefreshToken());
+
+            if (HttpsURLConnection.HTTP_OK != refreshToken.getHttpResponseCode()) {
+                userAccessToken = new AccessToken();
+                userAccessToken.setAccessToken(refreshToken.getAccessToken());
+                userAccessToken.setAccessTokenType("user");
+                userAccessToken.setScope("accounts");
+                userAccessToken.setExpires(refreshToken.getJwtExpires());
+                userAccessToken.setRefreshToken(refreshToken.getRefreshToken());
+                userAccessToken.setBankId(bankId);
+                userAccessToken.setUserName(userName);
+                accessTokenRepository.save(userAccessToken);
+            } else {
+                LOG.warn("Refresh token refreshing not succeeded. HTTP[{}] RAWResponse [{}]", refreshToken.getHttpResponseCode(), refreshToken.getRawContent());
+                String consentId = getConsentId(bankId);
+                LOG.info("No user AccessToken exists. OAuth authorization required! ConsentID: [" + consentId + "]");
+                throw new OAuthAuthorizationRequiredException(consentId);
+            }
+        }
+
+        return userAccessToken.getAccessToken();
     }
 
 
@@ -144,60 +248,15 @@ public class AISPController {
      * @return
      */
     @GetMapping(path = "/accounts", produces = "application/json")
-    public ResponseEntity getAccounts(@RequestHeader("x-tpp-bankid") String bankId, @AuthenticationPrincipal User user) {
-        LOG.info("User {}", user);
-        LOG.info("BankID: {}", bankId);
+    public ResponseEntity getAccounts(@RequestHeader(value = "x-tpp-bankid") String bankId, @AuthenticationPrincipal User user) {
+        LOG.info("BankID: {} User {}", bankId, user);
         try {
-            BankInfo bankInfo = bankRepository.getOne(bankId);
-            if (bankId.equals(bankInfo.getBankId())) {
-                // Testing result
-            }
-            // Create OAuthConfig
-            OAuthConfig oAuthConfig = null;
-            oAuthConfig = new OAuthConfig(bankInfo);
-            // Create TokenManager
-            TokenManager tokenManager = new TokenManager(oAuthConfig);
-
-            AccessToken prevAccessToken = getLatestUserAccessToken(user.getUsername(), bankId);
-            if (null != prevAccessToken) {
-                LOG.info("User has last access token? Is Still vaild? {} {} {}", prevAccessToken.getExpires(), (System.currentTimeMillis() / 1000), (System.currentTimeMillis() / 1000) < prevAccessToken.getExpires());
-                // TODO try refresh token
-                if ((System.currentTimeMillis() / 1000) > prevAccessToken.getExpires()) {
-                    LOG.info("Previous access token expired!");
-                    TokenResponse refreshToken = tokenManager.refreshToken(prevAccessToken.getRefreshToken());
-                    if (refreshToken.getHttpResponseCode()==200) {
-                        // Save accessToken for later usage
-                        AccessToken newAccessToken = new AccessToken();
-                        newAccessToken.setAccessToken(refreshToken.getAccessToken());
-                        newAccessToken.setAccessTokenType("user");
-                        newAccessToken.setScope("accounts");
-                        newAccessToken.setExpires(refreshToken.getJwtExpires());
-                        newAccessToken.setRefreshToken(refreshToken.getRefreshToken());
-                        newAccessToken.setBankId(bankId);
-                        newAccessToken.setUserName(user.getUsername());
-                        accessTokenRepository.save(newAccessToken);
-
-                        prevAccessToken = newAccessToken;
-                    } else {
-                        LOG.info("Refresh token refreshing failed!");
-                        String consentId = getConsentId(bankId);
-                        return new ResponseEntity<>("Authorize require", HttpStatus.PRECONDITION_REQUIRED);
-                    }
-                }
-            } else {
-                LOG.info("User has'nt got access token yet!");
-                // TODO Authorize required
-                String consentId = getConsentId(bankId);
-                return new ResponseEntity<>("Authorize require", HttpStatus.PRECONDITION_REQUIRED);
-            }
-
-            // TODO Checking previous accessToken is still valid and use that
-            // TODO Save accessToken for later usage
-
+            String userAccessToken = userAccessTokenIsValid(bankId, user.getUsername());
+            BankInfo bankInfo = tokenManagerCache.get(bankId).getOauthconfig().getBankInfo();
 
             // Setup HTTP headers
             HashMap<String, String> headers = new HashMap<>();
-            headers.put("Authorization", "Bearer " + prevAccessToken.getAccessToken());
+            headers.put("Authorization", "Bearer " + userAccessToken);
             headers.put("x-fapi-interaction-id", UUID.randomUUID().toString());
             // get ConsentID
             HttpResponse httpResponse = doPost(new URL(bankInfo.getAccountsUrl() + "/accounts"), headers, "{'Data':'valami'}");
@@ -214,6 +273,12 @@ public class AISPController {
                 LOG.error("Respond code {}; respond: [{}]", respondCode, content);
             }
             return new ResponseEntity<>(content, HttpStatus.resolve(respondCode));
+        } catch (OAuthAuthorizationRequiredException oare) {
+            LOG.warn("Something went wrong!", oare);
+
+            HttpHeaders responseHeaders = new HttpHeaders();
+            responseHeaders.set("x-tpp-consentid", oare.getConsentId());
+            return new ResponseEntity("Require authorize", responseHeaders, HttpStatus.PRECONDITION_REQUIRED);
         } catch (Throwable e) {
             LOG.error("Something went wrong!", e);
             return new ResponseEntity(e.getLocalizedMessage(), HttpStatus.BAD_REQUEST);

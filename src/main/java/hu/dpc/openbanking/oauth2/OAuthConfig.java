@@ -11,8 +11,10 @@ public class OAuthConfig {
     private String callbackURL;
     private URL tokenURL;
     private String subject;
+    private BankInfo bankInfo;
 
     public OAuthConfig(BankInfo bankInfo) throws MalformedURLException {
+        this.bankInfo = bankInfo;
         apiKey = bankInfo.getClientId();
         apiSecret = bankInfo.getClientSecret();
         callbackURL = bankInfo.getCallBackUrl();
@@ -60,5 +62,9 @@ public class OAuthConfig {
 
     public void setCallbackURL(String callbackURL) {
         this.callbackURL = callbackURL;
+    }
+
+    public BankInfo getBankInfo() {
+        return bankInfo;
     }
 }
