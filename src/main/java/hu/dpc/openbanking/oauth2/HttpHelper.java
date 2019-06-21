@@ -10,6 +10,11 @@ import java.net.HttpURLConnection;
  * Some http helper function.
  */
 public class HttpHelper {
+    /**
+     * TryCount when connection refused occurs.
+     */
+    public static final int CONNECTION_REFUSED_TRYCOUNT = 3;
+    public static final int CONNECTION_REFUSED_WAIT_IN_MS = 500;
 
     /**
      * Stream respond from inputStream and close connection. If inputStream is not available then stream from errorStream.

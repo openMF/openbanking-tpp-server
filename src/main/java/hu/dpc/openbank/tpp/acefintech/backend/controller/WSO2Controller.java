@@ -20,6 +20,7 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.net.ConnectException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -180,7 +181,7 @@ public class WSO2Controller {
                 headers.put("Authorization", "Bearer " + accessToken);
                 headers.put("x-fapi-interaction-id", UUID.randomUUID().toString());
                 // get ConsentID
-                HttpResponse httpResponse = doAPICall(true, new URL(bankInfo.getAccountsUrl() + "/account-initiations"), headers, "{'Data':'valami'}");
+                HttpResponse httpResponse = doAPICall(true, new URL(bankInfo.getAccountsUrl() + "/account-access-consents"), headers, "{\"Data\":\"valami\"}");
 
                 // Sometimes WSO2 respond errors in xml
                 String content = httpResponse.getContent().trim();
@@ -247,44 +248,61 @@ public class WSO2Controller {
      */
     public HttpResponse doAPICall(boolean post, URL url, Map<String, String> headerParams, String jsonContentData) {
         HttpResponse httpResponse = new HttpResponse();
-        try {
-            HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
-            HttpsTrust.INSTANCE.trust(conn);
-            conn.setReadTimeout(10000);
-            conn.setConnectTimeout(15000);
-            conn.setRequestMethod(post ? "POST" : "GET");
-            conn.setDoInput(true);
-            conn.setDoOutput(post);
+        for (int trycount = HttpHelper.CONNECTION_REFUSED_TRYCOUNT; trycount-- > 0; ) {
+            try {
+                LOG.info("doAPICall: {} {}", (post ? "POST" : "GET"), url);
+                HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
+                HttpsTrust.INSTANCE.trust(conn);
+                conn.setReadTimeout(10000);
+                conn.setConnectTimeout(15000);
+                conn.setRequestMethod(post ? "POST" : "GET");
+                conn.setDoInput(true);
+                conn.setDoOutput(post);
 
-            conn.setRequestProperty("Accept", "application/json");
-            conn.setRequestProperty("Content-Type", "application/json");
-            for (Map.Entry<String, String> entry : headerParams.entrySet()) {
-                conn.setRequestProperty(entry.getKey(), entry.getValue());
+                conn.setRequestProperty("Accept", "application/json");
+                conn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+                for (Map.Entry<String, String> entry : headerParams.entrySet()) {
+                    LOG.info("doAPICall-Header: {}: {}", entry.getKey(), entry.getValue());
+                    conn.setRequestProperty(entry.getKey(), entry.getValue());
+                }
+
+                if (post) {
+                    LOG.info("doAPICall-body: [{}]", jsonContentData);
+                    OutputStream os = conn.getOutputStream();
+                    BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, StandardCharsets.UTF_8));
+
+                    writer.write(jsonContentData);
+
+                    writer.flush();
+                    writer.close();
+                    os.close();
+                }
+
+                int responseCode = conn.getResponseCode();
+                LOG.info("Response code: {}", responseCode);
+                String response = HttpHelper.getResponseContent(conn);
+                LOG.info("Response: [{}]\n[{}]", response, conn.getResponseMessage());
+
+                httpResponse.setResponseCode(responseCode);
+                httpResponse.setContent(response);
+                return httpResponse;
+            } catch (ConnectException ce) {
+                LOG.error("Connection refused: trying... {} {}", trycount, ce.getLocalizedMessage());
+                if (trycount > 0) {
+                    try {
+                        Thread.sleep(HttpHelper.CONNECTION_REFUSED_WAIT_IN_MS);
+                    } catch (InterruptedException e) {
+                        // DO NOTHING
+                    }
+                } else {
+                    throw new APICallException("Connection refused");
+                }
+            } catch (IOException e) {
+                httpResponse.setResponseCode(-1);
+                httpResponse.setContent(e.getLocalizedMessage());
+                LOG.error("doAPICall", e);
+                return httpResponse;
             }
-
-            if (post) {
-                OutputStream os = conn.getOutputStream();
-                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, StandardCharsets.UTF_8));
-
-                writer.write(jsonContentData);
-
-                writer.flush();
-                writer.close();
-                os.close();
-            }
-
-            int responseCode = conn.getResponseCode();
-            LOG.info("Response code: {}", responseCode);
-            String response = HttpHelper.getResponseContent(conn);
-            LOG.info("Response: [{}]", response);
-
-            httpResponse.setResponseCode(responseCode);
-            httpResponse.setContent(response);
-            return httpResponse;
-        } catch (IOException e) {
-            httpResponse.setResponseCode(-1);
-            httpResponse.setContent(e.getLocalizedMessage());
-            LOG.error("doAPICall", e);
         }
 
         return httpResponse;

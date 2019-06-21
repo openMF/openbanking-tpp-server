@@ -33,18 +33,21 @@ public class BankInfo {
     @JsonIgnore
     @Column(name = "ACCOUNTS_URL")
     private String accountsUrl;
-    @JsonIgnore
     @Column(name = "CLIENT_ID")
+    @JsonProperty("ClientId")
     private String clientId;
     @JsonIgnore
     @Column(name = "CLIENT_SECRET")
     private String clientSecret;
-    @JsonIgnore
     @Column(name = "CALLBACK_URL")
+    @JsonProperty("CallbackUrl")
     private String callBackUrl;
     @JsonIgnore
     @Column(name = "USERNAME")
     private String username;
+    @Column(name = "AUTHORIZE_URL")
+    @JsonProperty("AuthorizeUrl")
+    private String authorizeUrl;
 
     public BankInfo() {
     }
@@ -135,5 +138,13 @@ public class BankInfo {
 
     public void setUsername(String username) {
         this.username = username;
+    }
+
+    public String getAuthorizeUrl() {
+        return authorizeUrl;
+    }
+
+    public void setAuthorizeUrl(String authorizeUrl) {
+        this.authorizeUrl = authorizeUrl;
     }
 }

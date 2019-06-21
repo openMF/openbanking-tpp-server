@@ -38,7 +38,7 @@ public class AISPController extends WSO2Controller {
             HttpResponse httpResponse = doAPICall(false, apiURL, headers, null);
 
             // Sometimes WSO2 respond errors in xml
-            String content = httpResponse.getContent().trim();
+            String content = httpResponse.getContent();
             checkWSO2Errors(content);
             int respondCode = httpResponse.getResponseCode();
             if (!(respondCode >= 200 && respondCode < 300)) {
@@ -109,6 +109,5 @@ public class AISPController extends WSO2Controller {
     public ResponseEntity getBalance(@RequestHeader(value = "x-tpp-bankid") String bankId, @AuthenticationPrincipal User user, @PathVariable("AccountId") String accountId) {
         return handle(bankId, user, "/accounts/" + accountId + "/balances");
     }
-
 
 }
