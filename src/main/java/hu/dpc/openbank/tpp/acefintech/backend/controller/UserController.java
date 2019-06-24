@@ -20,15 +20,15 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping(path = "/user/v1/")
 public class UserController {
-    private BankRepository bankRepository;
+    private final BankRepository bankRepository;
 
-    public UserController(BankRepository bankRepository) {
+    public UserController(final BankRepository bankRepository) {
         this.bankRepository = bankRepository;
     }
 
     @GetMapping(path = "/banks", produces = "application/json")
-    public SupportedBanks getSupportedBanks(@AuthenticationPrincipal User user) {
-        SupportedBanks supportedBanks = new SupportedBanks();
+    public SupportedBanks getSupportedBanks(@AuthenticationPrincipal final User user) {
+        final SupportedBanks supportedBanks = new SupportedBanks();
         supportedBanks.setBankInfoList(bankRepository.getUserConnectedBanks(user.getUsername()));
         return supportedBanks;
     }

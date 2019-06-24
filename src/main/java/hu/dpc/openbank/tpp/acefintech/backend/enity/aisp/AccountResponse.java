@@ -21,7 +21,7 @@ public class AccountResponse {
     @JsonProperty("Account")
     private List<Account> accounts = new ArrayList<>();
 
-    public void addAccount(Account account) {
+    public void addAccount(final Account account) {
         accounts.add(account);
     }
 
@@ -29,7 +29,7 @@ public class AccountResponse {
         return accounts;
     }
 
-    public void setAccounts(List<Account> accounts) {
+    public void setAccounts(final List<Account> accounts) {
         this.accounts = accounts;
     }
 }

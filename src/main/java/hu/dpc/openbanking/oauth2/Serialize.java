@@ -16,24 +16,24 @@ import hu.dpc.openbank.tpp.acefintech.backend.enity.bank.SupportedBanks;
 import java.util.UUID;
 
 public class Serialize {
-    public static void main(String[] args) {
+    public static void main(final String[] args) {
 
-        Object obj = supportedBanks();
+        final Object obj = supportedBanks();
 
-        ObjectMapper mapper = new ObjectMapper();
+        final ObjectMapper mapper = new ObjectMapper();
         try {
-            String json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(obj);
+            final String json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(obj);
             System.out.println(json);
-        } catch (JsonProcessingException e) {
+        } catch (final JsonProcessingException e) {
             e.printStackTrace();
         }
 
     }
 
     private static SupportedBanks supportedBanks() {
-        SupportedBanks supportedBanks = new SupportedBanks();
+        final SupportedBanks supportedBanks = new SupportedBanks();
         {
-            BankInfo bankInfo = new BankInfo();
+            final BankInfo bankInfo = new BankInfo();
             bankInfo.setBankId(UUID.randomUUID().toString());
             bankInfo.setBankName("Lion");
             bankInfo.setShortName("Lion");
@@ -43,7 +43,7 @@ public class Serialize {
             supportedBanks.add(bankInfo);
         }
         {
-            BankInfo bankInfo = new BankInfo();
+            final BankInfo bankInfo = new BankInfo();
             bankInfo.setBankId(UUID.randomUUID().toString());
             bankInfo.setBankName("Elephant");
             bankInfo.setShortName("Elephant");

@@ -5,11 +5,7 @@
  *
  * https://mozilla.org/MPL/2.0/.
  */
+@ParametersAreNonnullByDefault
+package hu.dpc.openbank.tpp.acefintech.backend.controller;
 
-package hu.dpc.openbank.tpp.acefintech.backend.repository;
-
-public class APICallException extends RuntimeException {
-    public APICallException(final String message) {
-        super(message);
-    }
-}
+import javax.annotation.ParametersAreNonnullByDefault;

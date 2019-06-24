@@ -24,14 +24,11 @@ public class Users {
     @Column(name = "ENABLED")
     private boolean enabled;
 
-    public Users() {
-    }
-
     public String getUserName() {
         return userName;
     }
 
-    public void setUserName(String userName) {
+    public void setUserName(final String userName) {
         this.userName = userName;
     }
 
@@ -39,7 +36,7 @@ public class Users {
         return password;
     }
 
-    public void setPassword(String password) {
+    public void setPassword(final String password) {
         this.password = password;
     }
 
@@ -47,7 +44,7 @@ public class Users {
         return enabled;
     }
 
-    public void setEnabled(boolean enabled) {
+    public void setEnabled(final boolean enabled) {
         this.enabled = enabled;
     }
 }

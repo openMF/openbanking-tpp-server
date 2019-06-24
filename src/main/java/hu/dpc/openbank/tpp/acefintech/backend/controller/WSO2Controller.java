@@ -22,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import javax.annotation.Nonnull;
 import javax.net.ssl.HttpsURLConnection;
 import javax.persistence.EntityNotFoundException;
 import java.io.BufferedWriter;
@@ -29,6 +30,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.ConnectException;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -58,17 +60,92 @@ public class WSO2Controller {
     private BankRepository bankRepository;
 
     /**
+     * Check user AccessToken is valid and not expired.
+     *
+     * @param bankId
+     * @param userName
+     * @throws OAuthAuthorizationRequiredException
+     */
+    public String userAccessTokenIsValid(final String bankId, final String userName) {
+        LOG.info("userAccessTokenIsValid: bankId {} userName {}", bankId, userName);
+        AccessToken userAccessToken = getLatestUserAccessToken(userName, bankId);
+        if (null == userAccessToken) {
+            final String consentId = getConsentId(bankId);
+            LOG.info("No user AccessToken exists. OAuth authorization required! ConsentID: [{}]", consentId);
+            throw new OAuthAuthorizationRequiredException(consentId);
+        }
+
+        final TokenManager tokenManager = getTokenManager(bankId);
+        if (userAccessToken.isExpired()) {
+            LOG.info("User AccessToken is expired, trying refresh accessToken: [{}] refreshToken: [{}]", userAccessToken.getAccessToken(), userAccessToken.getRefreshToken());
+            final TokenResponse refreshToken = tokenManager.refreshToken(userAccessToken.getRefreshToken());
+
+            //noinspection ConstantOnLeftSideOfComparison
+            if (HttpURLConnection.HTTP_OK == refreshToken.getHttpResponseCode()) {
+                userAccessToken = createAndSaveUserAccessToken(refreshToken, bankId, userName);
+            } else {
+                LOG.warn("Refresh token refreshing not succeeded. HTTP[{}] RAWResponse [{}]", refreshToken.getHttpResponseCode(), refreshToken.getRawContent());
+                final String consentId = getConsentId(bankId);
+                LOG.info("No user AccessToken exists. OAuth authorization required! ConsentID: [{}]", consentId);
+                throw new OAuthAuthorizationRequiredException(consentId);
+            }
+        }
+
+        return userAccessToken.getAccessToken();
+    }
+
+    /**
      * Get latest user AccessToken.
      *
      * @param userId
      * @param bankId
      * @return
      */
-    private AccessToken getLatestUserAccessToken(String userId, String bankId) {
+    private AccessToken getLatestUserAccessToken(final String userId, final String bankId) {
         LOG.info("getLatestUserAccessToken userId {} bankId {}", userId, bankId);
-        AccessToken accessToken = accessTokenRepository.getLatest(bankId, userId, SCOPE_ACCOUNTS);
+        final AccessToken accessToken = accessTokenRepository.getLatest(bankId, userId, SCOPE_ACCOUNTS);
         LOG.info("AccessToken: {}", accessToken);
         return accessToken;
+    }
+
+    /**
+     * Get Accounts ConsentId
+     *
+     * @param bankId
+     * @return consentId if request it was not success return empty.
+     */
+    public String getConsentId(final String bankId) {
+        final int tryCount = 3;
+        boolean force = false;
+
+        try {
+            for (int ii = tryCount; 0 < ii--; ) {
+                final String accessToken = getClientAccessToken(bankId, force);
+                final BankInfo bankInfo = getTokenManager(bankId).getOauthconfig().getBankInfo();
+                // Setup HTTP headers
+                final Map<String, String> headers = new HashMap<>();
+                headers.put("Authorization", "Bearer " + accessToken);
+                headers.put("x-fapi-interaction-id", UUID.randomUUID().toString());
+                // get ConsentID
+                final HttpResponse httpResponse = doAPICall(true, new URL(bankInfo.getAccountsUrl() + "/account-access-consents"), headers, "{\"Data\":\"valami\"}");
+
+                // Sometimes WSO2 respond errors in xml
+                final String content = httpResponse.getContent();
+                checkWSO2Errors(content);
+                final int respondCode = httpResponse.getResponseCode();
+                if (200 <= respondCode && 300 > respondCode) {
+                    // TODO Parse response & return consentId
+                    LOG.error("Respond code {}; respond: [{}]", respondCode, content);
+                    return "ConsentId:12345";
+                }
+                force = true;
+            }
+
+            throw new APICallException("ConsentID request fails!");
+        } catch (final MalformedURLException mue) {
+            LOG.error("URL problems!", mue);
+            throw new BankConfigException(mue.getLocalizedMessage());
+        }
     }
 
     /**
@@ -79,25 +156,25 @@ public class WSO2Controller {
      * @throws BankIDNotFoundException
      * @throws BankConfigException
      */
-    public TokenManager getTokenManager(String bankId) {
+    public TokenManager getTokenManager(final String bankId) {
         LOG.info("BankID: {}", bankId);
 
         TokenManager tokenManager = tokenManagerCache.get(bankId);
         if (null == tokenManager) {
             try {
-                BankInfo bankInfo = bankRepository.getOne(bankId);
+                final BankInfo bankInfo = bankRepository.getOne(bankId);
                 if (null == bankInfo || !bankId.equals(bankInfo.getBankId())) {
                     // Testing result
                     throw new BankIDNotFoundException(bankId);
                 }
-                OAuthConfig oAuthConfig = new OAuthConfig(bankInfo);
+                final OAuthConfig oAuthConfig = new OAuthConfig(bankInfo);
                 tokenManager = new TokenManager(oAuthConfig);
                 tokenManagerCache.put(bankId, tokenManager);
-            } catch (EntityNotFoundException e) {
+            } catch (final EntityNotFoundException e) {
                 // BankId not found
                 LOG.error("Bank ID not found! [{}]", bankId);
                 throw new BankIDNotFoundException(bankId);
-            } catch (MalformedURLException e) {
+            } catch (final MalformedURLException e) {
                 LOG.error("Bank config error!", e);
                 throw new BankConfigException(e.getLocalizedMessage());
             }
@@ -105,6 +182,27 @@ public class WSO2Controller {
         return tokenManager;
     }
 
+    /**
+     * Create and Save user AccessToken from TokenResponse (code exchange/refreshToken)
+     *
+     * @param refreshToken
+     * @param bankId
+     * @param userName
+     * @return
+     */
+    public AccessToken createAndSaveUserAccessToken(final TokenResponse refreshToken, final String bankId, final String userName) {
+        final AccessToken userAccessToken = new AccessToken();
+        userAccessToken.setAccessToken(refreshToken.getAccessToken());
+        userAccessToken.setAccessTokenType("user");
+        userAccessToken.setScope(SCOPE_ACCOUNTS);
+        userAccessToken.setExpires(refreshToken.getJwtExpires());
+        userAccessToken.setRefreshToken(refreshToken.getRefreshToken());
+        userAccessToken.setBankId(bankId);
+        userAccessToken.setUserName(userName);
+        accessTokenRepository.save(userAccessToken);
+
+        return userAccessToken;
+    }
 
     /**
      * Get or create client AccessToken
@@ -112,21 +210,21 @@ public class WSO2Controller {
      * @param bankId
      * @return
      */
-    private String getClientAccessToken(String bankId, boolean force) {
+    private String getClientAccessToken(final String bankId, final boolean force) {
         LOG.info("getClientAccessToken: bankId: {} force: {}", bankId, force);
         AccessToken accessToken = clientAccessTokenCache.get(bankId);
-        LOG.info("Access token {} found in cache for bank {}", (accessToken == null ? "not" : ""), bankId);
+        LOG.info("Access token {} found in cache for bank {}", (null == accessToken ? "not" : ""), bankId);
         if (null != accessToken) {
             LOG.info("Cached Access token {} is expired {} expires {} current {}", accessToken.getAccessToken(), accessToken.isExpired(), accessToken.getExpires(), System.currentTimeMillis());
         }
 
         if (force || null == accessToken || accessToken.isExpired()) {
-            TokenManager tokenManager = getTokenManager(bankId);
-            TokenResponse tokenResponse = tokenManager.getAccessTokenWithClientCredential(new String[]{SCOPE_ACCOUNTS});
-            int respondeCode = tokenResponse.getHttpResponseCode();
-            if (respondeCode >= 200 && respondeCode < 300) {
+            final TokenManager tokenManager = getTokenManager(bankId);
+            final TokenResponse tokenResponse = tokenManager.getAccessTokenWithClientCredential(new String[]{SCOPE_ACCOUNTS});
+            final int respondeCode = tokenResponse.getHttpResponseCode();
+            if (200 <= respondeCode && 300 > respondeCode) {
 
-                String accessTokenStr = tokenResponse.getAccessToken();
+                final String accessTokenStr = tokenResponse.getAccessToken();
                 LOG.debug("Client AccessToken: {}", accessTokenStr);
 
                 // Save accessToken for later usage
@@ -149,12 +247,82 @@ public class WSO2Controller {
     }
 
     /**
+     * Execute API request.
+     *
+     * @param post            request is POST
+     * @param headerParams
+     * @param jsonContentData
+     * @return
+     */
+    public static HttpResponse doAPICall(final boolean post, final URL url, final Map<String, String> headerParams, @Nonnull final String jsonContentData) {
+        final HttpResponse httpResponse = new HttpResponse();
+        for (int trycount = HttpHelper.CONNECTION_REFUSED_TRYCOUNT; 0 < trycount--; ) {
+            try {
+                LOG.info("doAPICall: {} {}", (post ? "POST" : "GET"), url);
+                final HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
+                HttpsTrust.INSTANCE.trust(conn);
+                conn.setReadTimeout(10000);
+                conn.setConnectTimeout(15000);
+                conn.setRequestMethod(post ? "POST" : "GET");
+                conn.setDoInput(true);
+                conn.setDoOutput(post);
+
+                conn.setRequestProperty("Accept", "application/json");
+                conn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+                for (final Map.Entry<String, String> entry : headerParams.entrySet()) {
+                    LOG.info("doAPICall-Header: {}: {}", entry.getKey(), entry.getValue());
+                    conn.setRequestProperty(entry.getKey(), entry.getValue());
+                }
+
+                if (post) {
+                    LOG.info("doAPICall-body: [{}]", jsonContentData);
+                    final OutputStream os = conn.getOutputStream();
+                    final BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, StandardCharsets.UTF_8));
+
+                    writer.write(jsonContentData);
+
+                    writer.flush();
+                    writer.close();
+                    os.close();
+                }
+
+                final int responseCode = conn.getResponseCode();
+                LOG.info("Response code: {}", responseCode);
+                final String response = HttpHelper.getResponseContent(conn);
+                LOG.info("Response: [{}]\n[{}]", response, conn.getResponseMessage());
+
+                httpResponse.setResponseCode(responseCode);
+                httpResponse.setContent(response);
+                return httpResponse;
+            } catch (final ConnectException ce) {
+                LOG.error("Connection refused: trying... {} {}", trycount, ce.getLocalizedMessage());
+                if (0 < trycount) {
+                    try {
+                        Thread.sleep(HttpHelper.CONNECTION_REFUSED_WAIT_IN_MS);
+                    } catch (final InterruptedException e) {
+                        // DO NOTHING
+                    }
+                } else {
+                    throw new APICallException("Connection refused");
+                }
+            } catch (final IOException e) {
+                httpResponse.setResponseCode(-1);
+                httpResponse.setContent(e.getLocalizedMessage());
+                LOG.error("doAPICall", e);
+                return httpResponse;
+            }
+        }
+
+        return httpResponse;
+    }
+
+    /**
      * Handle WSO2 errors
      *
      * @param content
      */
-    public void checkWSO2Errors(String content) {
-        if (null != content && content.startsWith("<")) {
+    public static void checkWSO2Errors(final String content) {
+        if (!content.isEmpty() && content.charAt(0) == '<') {
             LOG.error("Respond in XML, it's mean something error occured! {}", content);
             if (BANK_NOT_WORKING_ERROR.equals(content)) {
                 throw new APICallException("API gateway cannot connect to BANK backend!");
@@ -167,175 +335,6 @@ public class WSO2Controller {
             }
             throw new APICallException("API gateway problem!");
         }
-    }
-
-
-    /**
-     * Get Accounts ConsentId
-     *
-     * @param bankId
-     * @return consentId if request it was not success return empty.
-     */
-    public String getConsentId(String bankId) {
-        int tryCount = 3;
-        boolean force = false;
-
-        try {
-            for (int ii = tryCount; ii-- > 0; ) {
-                String accessToken = getClientAccessToken(bankId, force);
-                BankInfo bankInfo = getTokenManager(bankId).getOauthconfig().getBankInfo();
-                // Setup HTTP headers
-                HashMap<String, String> headers = new HashMap<>();
-                headers.put("Authorization", "Bearer " + accessToken);
-                headers.put("x-fapi-interaction-id", UUID.randomUUID().toString());
-                // get ConsentID
-                HttpResponse httpResponse = doAPICall(true, new URL(bankInfo.getAccountsUrl() + "/account-access-consents"), headers, "{\"Data\":\"valami\"}");
-
-                // Sometimes WSO2 respond errors in xml
-                String content = httpResponse.getContent().trim();
-                checkWSO2Errors(content);
-                int respondCode = httpResponse.getResponseCode();
-                if (respondCode >= 200 && respondCode < 300) {
-                    // TODO Parse response & return consentId
-                    LOG.error("Respond code {}; respond: [{}]", respondCode, content);
-                    return "ConsentId:12345";
-                }
-                force = true;
-            }
-
-            throw new APICallException("ConsentID request fails!");
-        } catch (MalformedURLException mue) {
-            LOG.error("URL problems!", mue);
-            throw new BankConfigException(mue.getLocalizedMessage());
-        }
-    }
-
-
-    /**
-     * Check user AccessToken is valid and not expired.
-     *
-     * @param bankId
-     * @param userName
-     * @throws OAuthAuthorizationRequiredException
-     */
-    public String userAccessTokenIsValid(String bankId, String userName) {
-        LOG.info("userAccessTokenIsValid: bankId {} userName {}", bankId, userName);
-        AccessToken userAccessToken = getLatestUserAccessToken(userName, bankId);
-        if (null == userAccessToken) {
-            String consentId = getConsentId(bankId);
-            LOG.info("No user AccessToken exists. OAuth authorization required! ConsentID: [{}]", consentId);
-            throw new OAuthAuthorizationRequiredException(consentId);
-        }
-
-        TokenManager tokenManager = getTokenManager(bankId);
-        if (userAccessToken.isExpired()) {
-            LOG.info("User AccessToken is expired, trying refresh accessToken: [{}] refreshToken: [{}]", userAccessToken.getAccessToken(), userAccessToken.getRefreshToken());
-            TokenResponse refreshToken = tokenManager.refreshToken(userAccessToken.getRefreshToken());
-
-            if (HttpsURLConnection.HTTP_OK == refreshToken.getHttpResponseCode()) {
-                userAccessToken = createAndSaveUserAccessToken(refreshToken, bankId, userName);
-            } else {
-                LOG.warn("Refresh token refreshing not succeeded. HTTP[{}] RAWResponse [{}]", refreshToken.getHttpResponseCode(), refreshToken.getRawContent());
-                String consentId = getConsentId(bankId);
-                LOG.info("No user AccessToken exists. OAuth authorization required! ConsentID: [{}]", consentId);
-                throw new OAuthAuthorizationRequiredException(consentId);
-            }
-        }
-
-        return userAccessToken.getAccessToken();
-    }
-
-
-    /**
-     * Execute API request.
-     *
-     * @param post            request is POST
-     * @param headerParams
-     * @param jsonContentData
-     * @return
-     */
-    public HttpResponse doAPICall(boolean post, URL url, Map<String, String> headerParams, String jsonContentData) {
-        HttpResponse httpResponse = new HttpResponse();
-        for (int trycount = HttpHelper.CONNECTION_REFUSED_TRYCOUNT; trycount-- > 0; ) {
-            try {
-                LOG.info("doAPICall: {} {}", (post ? "POST" : "GET"), url);
-                HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
-                HttpsTrust.INSTANCE.trust(conn);
-                conn.setReadTimeout(10000);
-                conn.setConnectTimeout(15000);
-                conn.setRequestMethod(post ? "POST" : "GET");
-                conn.setDoInput(true);
-                conn.setDoOutput(post);
-
-                conn.setRequestProperty("Accept", "application/json");
-                conn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
-                for (Map.Entry<String, String> entry : headerParams.entrySet()) {
-                    LOG.info("doAPICall-Header: {}: {}", entry.getKey(), entry.getValue());
-                    conn.setRequestProperty(entry.getKey(), entry.getValue());
-                }
-
-                if (post) {
-                    LOG.info("doAPICall-body: [{}]", jsonContentData);
-                    OutputStream os = conn.getOutputStream();
-                    BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, StandardCharsets.UTF_8));
-
-                    writer.write(jsonContentData);
-
-                    writer.flush();
-                    writer.close();
-                    os.close();
-                }
-
-                int responseCode = conn.getResponseCode();
-                LOG.info("Response code: {}", responseCode);
-                String response = HttpHelper.getResponseContent(conn);
-                LOG.info("Response: [{}]\n[{}]", response, conn.getResponseMessage());
-
-                httpResponse.setResponseCode(responseCode);
-                httpResponse.setContent(response);
-                return httpResponse;
-            } catch (ConnectException ce) {
-                LOG.error("Connection refused: trying... {} {}", trycount, ce.getLocalizedMessage());
-                if (trycount > 0) {
-                    try {
-                        Thread.sleep(HttpHelper.CONNECTION_REFUSED_WAIT_IN_MS);
-                    } catch (InterruptedException e) {
-                        // DO NOTHING
-                    }
-                } else {
-                    throw new APICallException("Connection refused");
-                }
-            } catch (IOException e) {
-                httpResponse.setResponseCode(-1);
-                httpResponse.setContent(e.getLocalizedMessage());
-                LOG.error("doAPICall", e);
-                return httpResponse;
-            }
-        }
-
-        return httpResponse;
-    }
-
-    /**
-     * Create and Save user AccessToken from TokenResponse (code exchange/refreshToken)
-     *
-     * @param refreshToken
-     * @param bankId
-     * @param userName
-     * @return
-     */
-    public AccessToken createAndSaveUserAccessToken(TokenResponse refreshToken, String bankId, String userName) {
-        AccessToken userAccessToken = new AccessToken();
-        userAccessToken.setAccessToken(refreshToken.getAccessToken());
-        userAccessToken.setAccessTokenType("user");
-        userAccessToken.setScope(SCOPE_ACCOUNTS);
-        userAccessToken.setExpires(refreshToken.getJwtExpires());
-        userAccessToken.setRefreshToken(refreshToken.getRefreshToken());
-        userAccessToken.setBankId(bankId);
-        userAccessToken.setUserName(userName);
-        accessTokenRepository.save(userAccessToken);
-
-        return userAccessToken;
     }
 
 }

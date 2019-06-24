@@ -15,16 +15,11 @@ public class HttpResponse {
     public HttpResponse() {
     }
 
-    public HttpResponse(String content, int responseCode) {
-        this.content = content;
-        this.responseCode = responseCode;
-    }
-
     public String getContent() {
         return content;
     }
 
-    public void setContent(String content) {
+    public void setContent(final String content) {
         this.content = content;
     }
 
@@ -32,7 +27,7 @@ public class HttpResponse {
         return responseCode;
     }
 
-    public void setResponseCode(int responseCode) {
+    public void setResponseCode(final int responseCode) {
         this.responseCode = responseCode;
     }
 }

@@ -26,7 +26,7 @@ public class AccountAccount {
         return schemeName;
     }
 
-    public void setSchemeName(String schemeName) {
+    public void setSchemeName(final String schemeName) {
         this.schemeName = schemeName;
     }
 
@@ -34,7 +34,7 @@ public class AccountAccount {
         return identification;
     }
 
-    public void setIdentification(String identification) {
+    public void setIdentification(final String identification) {
         this.identification = identification;
     }
 
@@ -42,7 +42,7 @@ public class AccountAccount {
         return name;
     }
 
-    public void setName(String name) {
+    public void setName(final String name) {
         this.name = name;
     }
 }

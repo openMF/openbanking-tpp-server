@@ -11,7 +11,7 @@ package hu.dpc.openbank.tpp.acefintech.backend.repository;
 public class OAuthAuthorizationRequiredException extends RuntimeException {
     private final String consentId;
 
-    public OAuthAuthorizationRequiredException(String consentId) {
+    public OAuthAuthorizationRequiredException(final String consentId) {
         super("ConsentID = [" + consentId + "]");
         this.consentId = consentId;
     }

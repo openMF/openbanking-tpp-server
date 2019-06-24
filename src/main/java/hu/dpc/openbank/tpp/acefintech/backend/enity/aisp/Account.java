@@ -92,7 +92,7 @@ public class Account {
         return accountId;
     }
 
-    public void setAccountId(String accountId) {
+    public void setAccountId(final String accountId) {
         this.accountId = accountId;
     }
 
@@ -100,7 +100,7 @@ public class Account {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(final String status) {
         this.status = status;
     }
 
@@ -108,7 +108,7 @@ public class Account {
         return statusUpdateDateTime;
     }
 
-    public void setStatusUpdateDateTime(String statusUpdateDateTime) {
+    public void setStatusUpdateDateTime(final String statusUpdateDateTime) {
         this.statusUpdateDateTime = statusUpdateDateTime;
     }
 
@@ -116,7 +116,7 @@ public class Account {
         return currency;
     }
 
-    public void setCurrency(String currency) {
+    public void setCurrency(final String currency) {
         this.currency = currency;
     }
 
@@ -124,7 +124,7 @@ public class Account {
         return accountType;
     }
 
-    public void setAccountType(String accountType) {
+    public void setAccountType(final String accountType) {
         this.accountType = accountType;
     }
 
@@ -132,7 +132,7 @@ public class Account {
         return accountSubType;
     }
 
-    public void setAccountSubType(String accountSubType) {
+    public void setAccountSubType(final String accountSubType) {
         this.accountSubType = accountSubType;
     }
 
@@ -140,7 +140,7 @@ public class Account {
         return nickname;
     }
 
-    public void setNickname(String nickname) {
+    public void setNickname(final String nickname) {
         this.nickname = nickname;
     }
 
@@ -148,7 +148,7 @@ public class Account {
         return account;
     }
 
-    public void setAccount(List<AccountAccount> account) {
+    public void setAccount(final List<AccountAccount> account) {
         this.account = account;
     }
 }

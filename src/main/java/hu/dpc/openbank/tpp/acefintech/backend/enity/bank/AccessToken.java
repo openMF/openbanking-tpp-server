@@ -32,14 +32,11 @@ public class AccessToken {
     @Column(name = "REFRESH_TOKEN")
     private String refreshToken;
 
-    public AccessToken() {
-    }
-
     public int getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(final int id) {
         this.id = id;
     }
 
@@ -47,7 +44,7 @@ public class AccessToken {
         return bankId;
     }
 
-    public void setBankId(String bankId) {
+    public void setBankId(final String bankId) {
         this.bankId = bankId;
     }
 
@@ -55,7 +52,7 @@ public class AccessToken {
         return userName;
     }
 
-    public void setUserName(String userName) {
+    public void setUserName(final String userName) {
         this.userName = userName;
     }
 
@@ -63,7 +60,7 @@ public class AccessToken {
         return accessToken;
     }
 
-    public void setAccessToken(String accessToken) {
+    public void setAccessToken(final String accessToken) {
         this.accessToken = accessToken;
     }
 
@@ -71,7 +68,7 @@ public class AccessToken {
         return accessTokenType;
     }
 
-    public void setAccessTokenType(String accessTokenType) {
+    public void setAccessTokenType(final String accessTokenType) {
         this.accessTokenType = accessTokenType;
     }
 
@@ -79,7 +76,7 @@ public class AccessToken {
         return scope;
     }
 
-    public void setScope(String scope) {
+    public void setScope(final String scope) {
         this.scope = scope;
     }
 
@@ -87,7 +84,7 @@ public class AccessToken {
         return expires;
     }
 
-    public void setExpires(long expires) {
+    public void setExpires(final long expires) {
         this.expires = expires;
     }
 
@@ -95,7 +92,7 @@ public class AccessToken {
         return refreshToken;
     }
 
-    public void setRefreshToken(String refreshToken) {
+    public void setRefreshToken(final String refreshToken) {
         this.refreshToken = refreshToken;
     }
 
@@ -105,6 +102,6 @@ public class AccessToken {
      * @return
      */
     public boolean  isExpired() {
-        return (System.currentTimeMillis() - 3000) > expires;
+        return (System.currentTimeMillis() - 3000L) > expires;
     }
 }

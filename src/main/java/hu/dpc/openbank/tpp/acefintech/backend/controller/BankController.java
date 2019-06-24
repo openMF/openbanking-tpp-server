@@ -16,17 +16,17 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping(path = "/bank/v1/")
+@RequestMapping(path = "/banks/v1/")
 public class BankController {
-    private BankRepository bankRepository;
+    private final BankRepository bankRepository;
 
-    public BankController(BankRepository bankRepository) {
+    public BankController(final BankRepository bankRepository) {
         this.bankRepository = bankRepository;
     }
 
     @GetMapping(path = "/supported", produces = "application/json")
     public SupportedBanks getSupportedBanks() {
-        SupportedBanks supportedBanks = new SupportedBanks();
+        final SupportedBanks supportedBanks = new SupportedBanks();
         supportedBanks.setBankInfoList(bankRepository.findAll());
         return supportedBanks;
     }

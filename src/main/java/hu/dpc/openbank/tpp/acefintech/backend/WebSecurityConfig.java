@@ -23,26 +23,40 @@ import javax.sql.DataSource;
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     private final DataSource dataSource;
 
-    public WebSecurityConfig(DataSource dataSource) {
+    public WebSecurityConfig(final DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
     @Override
-    protected void configure(HttpSecurity http) throws Exception {
+    protected void configure(final @org.jetbrains.annotations.NotNull HttpSecurity http) throws Exception {
         http.httpBasic()
                 .and()
-                .authorizeRequests().antMatchers("/index.html", "/login.html", "/").permitAll()
+                .authorizeRequests().antMatchers("/netbank/index.html", "/netbank/login", "/netbank/").permitAll()
                 .anyRequest().authenticated()
-                .and().formLogin().loginPage("/login.html")
+                .and().formLogin().loginPage("/netbank/login")
                 .and().logout().permitAll()
                 .and().csrf().csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse());
     }
 
     @Autowired
-    public void configureGlobal(AuthenticationManagerBuilder auth)
+    public void configureGlobal(final @org.jetbrains.annotations.NotNull AuthenticationManagerBuilder auth)
             throws Exception {
         auth.jdbcAuthentication()
                 .dataSource(dataSource);
+    }
+
+    @org.springframework.context.annotation.Bean
+    public org.springframework.web.servlet.config.annotation.WebMvcConfigurer corsConfigurer() {
+        return new org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter() {
+            @Override
+            public void addCorsMappings(final org.springframework.web.servlet.config.annotation.CorsRegistry registry) {
+                registry.addMapping("/**")
+                        .allowedOrigins("https://acefintech.mlabs.dpc.hu", "http://localhost")
+                        .allowedMethods("GET", "POST")
+                        .allowedHeaders("x-tpp-bankid")
+                        .exposedHeaders("x-ttp-consentid");
+            }
+        };
     }
 
 }

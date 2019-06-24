@@ -17,7 +17,7 @@ public class SupportedBanks {
     @JsonProperty("BankInfo")
     private List<BankInfo> bankInfoList = new ArrayList<>();
 
-    public void add(BankInfo bankInfo) {
+    public void add(final BankInfo bankInfo) {
         bankInfoList.add(bankInfo);
     }
 
@@ -25,7 +25,7 @@ public class SupportedBanks {
         return bankInfoList;
     }
 
-    public void setBankInfoList(List<BankInfo> bankInfoList) {
+    public void setBankInfoList(final List<BankInfo> bankInfoList) {
         this.bankInfoList = bankInfoList;
     }
 }

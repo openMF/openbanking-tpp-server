@@ -57,14 +57,11 @@ public class BankInfo {
     @JsonProperty("AuthorizeUrl")
     private String authorizeUrl;
 
-    public BankInfo() {
-    }
-
     public String getBankName() {
         return bankName;
     }
 
-    public void setBankName(String bankName) {
+    public void setBankName(final String bankName) {
         this.bankName = bankName;
     }
 
@@ -72,7 +69,7 @@ public class BankInfo {
         return shortName;
     }
 
-    public void setShortName(String shortName) {
+    public void setShortName(final String shortName) {
         this.shortName = shortName;
     }
 
@@ -80,7 +77,7 @@ public class BankInfo {
         return longName;
     }
 
-    public void setLongName(String longName) {
+    public void setLongName(final String longName) {
         this.longName = longName;
     }
 
@@ -88,7 +85,7 @@ public class BankInfo {
         return logoUrl;
     }
 
-    public void setLogoUrl(String logoUrl) {
+    public void setLogoUrl(final String logoUrl) {
         this.logoUrl = logoUrl;
     }
 
@@ -96,7 +93,7 @@ public class BankInfo {
         return bankId;
     }
 
-    public void setBankId(String bankId) {
+    public void setBankId(final String bankId) {
         this.bankId = bankId;
     }
 
@@ -104,7 +101,7 @@ public class BankInfo {
         return tokenUrl;
     }
 
-    public void setTokenUrl(String tokenUrl) {
+    public void setTokenUrl(final String tokenUrl) {
         this.tokenUrl = tokenUrl;
     }
 
@@ -112,7 +109,7 @@ public class BankInfo {
         return accountsUrl;
     }
 
-    public void setAccountsUrl(String accountsUrl) {
+    public void setAccountsUrl(final String accountsUrl) {
         this.accountsUrl = accountsUrl;
     }
 
@@ -120,7 +117,7 @@ public class BankInfo {
         return clientId;
     }
 
-    public void setClientId(String clientId) {
+    public void setClientId(final String clientId) {
         this.clientId = clientId;
     }
 
@@ -128,7 +125,7 @@ public class BankInfo {
         return clientSecret;
     }
 
-    public void setClientSecret(String clientSecret) {
+    public void setClientSecret(final String clientSecret) {
         this.clientSecret = clientSecret;
     }
 
@@ -136,7 +133,7 @@ public class BankInfo {
         return callBackUrl;
     }
 
-    public void setCallBackUrl(String callBackUrl) {
+    public void setCallBackUrl(final String callBackUrl) {
         this.callBackUrl = callBackUrl;
     }
 
@@ -144,7 +141,7 @@ public class BankInfo {
         return username;
     }
 
-    public void setUsername(String username) {
+    public void setUsername(final String username) {
         this.username = username;
     }
 
@@ -152,7 +149,7 @@ public class BankInfo {
         return authorizeUrl;
     }
 
-    public void setAuthorizeUrl(String authorizeUrl) {
+    public void setAuthorizeUrl(final String authorizeUrl) {
         this.authorizeUrl = authorizeUrl;
     }
 }

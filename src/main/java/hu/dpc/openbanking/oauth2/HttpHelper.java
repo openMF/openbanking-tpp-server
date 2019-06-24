@@ -8,6 +8,7 @@
 
 package hu.dpc.openbanking.oauth2;
 
+import javax.annotation.Nonnull;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -22,7 +23,7 @@ public class HttpHelper {
      * TryCount when connection refused occurs.
      */
     public static final int CONNECTION_REFUSED_TRYCOUNT = 3;
-    public static final int CONNECTION_REFUSED_WAIT_IN_MS = 500;
+    public static final long CONNECTION_REFUSED_WAIT_IN_MS = 500;
 
     /**
      * Stream respond from inputStream and close connection. If inputStream is not available then stream from errorStream.
@@ -31,11 +32,12 @@ public class HttpHelper {
      * @return response
      * @throws IOException when stream problem occur
      */
-    public static String getResponseContent(HttpURLConnection conn) throws IOException {
+    @Nonnull
+    public static String getResponseContent(final HttpURLConnection conn) throws IOException {
         InputStream inputStream = null;
         try {
             inputStream = conn.getInputStream();
-        } catch (IOException ioe) {
+        } catch (final IOException ioe) {
             // DO NOTHING
         }
 
@@ -43,10 +45,10 @@ public class HttpHelper {
             inputStream = conn.getErrorStream();
         }
 
-        StringBuilder response = new StringBuilder(4096);
-        BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
+        final StringBuilder response = new StringBuilder(4096);
+        final BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
         String line;
-        while ((line = br.readLine()) != null) {
+        while (null != (line = br.readLine())) {
             response.append(line);
         }
         conn.disconnect();

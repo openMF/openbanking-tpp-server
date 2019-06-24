@@ -32,14 +32,11 @@ public class UserBank {
     @Column(name = "SCOPE")
     private String scope;
 
-    public UserBank() {
-    }
-
     public int getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(final int id) {
         this.id = id;
     }
 
@@ -47,7 +44,7 @@ public class UserBank {
         return userName;
     }
 
-    public void setUserName(String userName) {
+    public void setUserName(final String userName) {
         this.userName = userName;
     }
 
@@ -55,7 +52,7 @@ public class UserBank {
         return bankId;
     }
 
-    public void setBankId(String bankId) {
+    public void setBankId(final String bankId) {
         this.bankId = bankId;
     }
 
@@ -63,7 +60,7 @@ public class UserBank {
         return code;
     }
 
-    public void setCode(String code) {
+    public void setCode(final String code) {
         this.code = code;
     }
 
@@ -71,7 +68,7 @@ public class UserBank {
         return bankUserName;
     }
 
-    public void setBankUserName(String bankUserName) {
+    public void setBankUserName(final String bankUserName) {
         this.bankUserName = bankUserName;
     }
 
@@ -79,7 +76,7 @@ public class UserBank {
         return accessToken;
     }
 
-    public void setAccessToken(String accessToken) {
+    public void setAccessToken(final String accessToken) {
         this.accessToken = accessToken;
     }
 
@@ -87,7 +84,7 @@ public class UserBank {
         return scope;
     }
 
-    public void setScope(String scope) {
+    public void setScope(final String scope) {
         this.scope = scope;
     }
 }

@@ -12,7 +12,6 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import hu.dpc.openbank.tpp.acefintech.backend.controller.AISPController;
 import hu.dpc.openbank.tpp.acefintech.backend.enity.oauth2.TokenResponse;
 import hu.dpc.openbank.tpp.acefintech.backend.repository.APICallException;
 import org.slf4j.Logger;
@@ -32,33 +31,16 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class TokenManager {
-    private static final Logger LOG = LoggerFactory.getLogger(AISPController.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TokenManager.class);
 
 
     private final OAuthConfig oauthconfig;
 
-    public TokenManager(OAuthConfig config) {
-        this.oauthconfig = config;
+    public TokenManager(final OAuthConfig config) {
+        oauthconfig = config;
     }
 
-    private static String getPostDataString(HashMap<String, String> params) {
-        StringBuilder result = new StringBuilder();
-        boolean first = true;
-        for (Map.Entry<String, String> entry : params.entrySet()) {
-            if (first)
-                first = false;
-            else
-                result.append("&");
-
-            result.append(URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8));
-            result.append("=");
-            result.append(URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8));
-        }
-
-        return result.toString();
-    }
-
-    private static void debugToken(TokenResponse token) {
+    private static void debugToken(final TokenResponse token) {
         System.out.println("HTTP: " + token.getHttpResponseCode());
         System.out.println("Access token: " + token.getAccessToken());
         System.out.println("Refresh token: " + token.getRefreshToken());
@@ -73,6 +55,23 @@ public class TokenManager {
 
     }
 
+    /**
+     * <pre>curl -k -X POST "https://localhost:8243/token"
+     *           -H "Content-Type: application/x-www-form-urlencoded"
+     *           -H "Authorization: Basic bllkSmFfS0huaWNWWENZRU1OU2dLVkNpQ3p3YTpHWmhXOFlDZkM4VEM0dTJHYVJYU1hsY1JOR3dh"
+     *           -d "grant_type=client_credentials"
+     *           -d "scope=accounts openid"</pre>
+     *
+     * @return
+     */
+    public TokenResponse getAccessTokenWithClientCredential(final String[] scopes) {
+        final HashMap<String, String> postDataParams = new HashMap<>();
+        postDataParams.put("grant_type", "client_credentials");
+        postDataParams.put("scope", String.join(" ", scopes));
+
+        return doPost(postDataParams);
+    }
+
     public OAuthConfig getOauthconfig() {
         return oauthconfig;
     }
@@ -83,14 +82,14 @@ public class TokenManager {
      * @param postDataParams required params.k
      * @return
      */
-    private TokenResponse doPost(HashMap<String, String> postDataParams) {
+    private TokenResponse doPost(final HashMap<String, String> postDataParams) {
         int responseCode = -1;
-        for (int trycount = HttpHelper.CONNECTION_REFUSED_TRYCOUNT; trycount-- > 0; ) {
+        for (int trycount = HttpHelper.CONNECTION_REFUSED_TRYCOUNT; 0 < trycount--; ) {
             try {
-                URL url = oauthconfig.getTokenURL();
+                final URL url = oauthconfig.getTokenURL();
 
-                LOG.info("Call {}", url.toString());
-                HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
+                LOG.info("Call {}", url);
+                final HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
                 HttpsTrust.INSTANCE.trust(conn);
                 conn.setReadTimeout(10000);
                 conn.setConnectTimeout(15000);
@@ -101,11 +100,11 @@ public class TokenManager {
                 conn.setRequestProperty("Accept", "application/json");
                 conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
 
-                String authorization = Base64.getEncoder().encodeToString((oauthconfig.getApiKey() + ':' + oauthconfig.getApiSecret()).getBytes());
+                final String authorization = Base64.getEncoder().encodeToString((oauthconfig.getApiKey() + ':' + oauthconfig.getApiSecret()).getBytes());
                 conn.setRequestProperty("Authorization", "Basic " + authorization);
 
-                OutputStream os = conn.getOutputStream();
-                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, StandardCharsets.UTF_8));
+                final OutputStream os = conn.getOutputStream();
+                final BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, StandardCharsets.UTF_8));
 
                 writer.write(getPostDataString(postDataParams));
 
@@ -115,71 +114,71 @@ public class TokenManager {
 
                 responseCode = conn.getResponseCode();
                 LOG.info("Response code: {}", responseCode);
-                String response = HttpHelper.getResponseContent(conn);
+                final String response = HttpHelper.getResponseContent(conn);
                 LOG.info("Response: [{}]", response);
 
-                if (response.startsWith("<")) {
+                if (!response.isEmpty() && '<' == response.charAt(0)) {
                     // Response is not JSON
-                    TokenResponse result = new TokenResponse();
+                    final TokenResponse result = new TokenResponse();
                     result.setHttpResponseCode(responseCode);
                     result.setRawContent(response);
                     return result;
                 }
-                ObjectMapper mapper = new ObjectMapper();
-                TokenResponse result = mapper.readValue(response, TokenResponse.class);
+                final ObjectMapper mapper = new ObjectMapper();
+                final TokenResponse result = mapper.readValue(response, TokenResponse.class);
                 result.setRawContent(response);
                 result.setHttpResponseCode(responseCode);
 
-                if (responseCode == HttpsURLConnection.HTTP_OK) {
+                if (java.net.HttpURLConnection.HTTP_OK == responseCode) {
                     if (null != result.getIdToken()) {
                         try {
-                            DecodedJWT jwt = JWT.decode(result.getIdToken());
+                            final DecodedJWT jwt = JWT.decode(result.getIdToken());
                             result.setSubject(jwt.getSubject());
                             result.setJwtExpires(jwt.getExpiresAt().getTime());
-                        } catch (JWTDecodeException exception) {
+                        } catch (final JWTDecodeException exception) {
                             //Invalid token
                         }
                     }
                 }
 
                 return result;
-            } catch (ConnectException ce) {
+            } catch (final ConnectException ce) {
                 LOG.error("Connection refused: trying... {} {}", trycount, ce.getLocalizedMessage());
-                if (trycount > 0) {
+                if (0 < trycount) {
                     try {
                         Thread.sleep(HttpHelper.CONNECTION_REFUSED_WAIT_IN_MS);
-                    } catch (InterruptedException e) {
+                    } catch (final InterruptedException e) {
                         // DO NOTHING
                     }
                 } else {
                     throw new APICallException("Connection refused");
                 }
-            } catch (IOException e) {
+            } catch (final IOException e) {
                 LOG.error("Something went wrong: ", e);
                 throw new APICallException(e.getLocalizedMessage());
             }
         }
 
-        TokenResponse result = new TokenResponse();
+        final TokenResponse result = new TokenResponse();
         result.setHttpResponseCode(responseCode);
         return result;
     }
 
-    /**
-     * <pre>curl -k -X POST "https://localhost:8243/token"
-     *           -H "Content-Type: application/x-www-form-urlencoded"
-     *           -H "Authorization: Basic bllkSmFfS0huaWNWWENZRU1OU2dLVkNpQ3p3YTpHWmhXOFlDZkM4VEM0dTJHYVJYU1hsY1JOR3dh"
-     *           -d "grant_type=client_credentials"
-     *           -d "scope=accounts openid"</pre>
-     *
-     * @return
-     */
-    public TokenResponse getAccessTokenWithClientCredential(String[] scopes) {
-        HashMap<String, String> postDataParams = new HashMap<>();
-        postDataParams.put("grant_type", "client_credentials");
-        postDataParams.put("scope", String.join(" ", scopes));
+    private static String getPostDataString(final Map<String, String> params) {
+        final StringBuilder result = new StringBuilder(4096);
+        boolean first = true;
+        for (final Map.Entry<String, String> entry : params.entrySet()) {
+            if (first)
+                first = false;
+            else
+                result.append("&");
 
-        return doPost(postDataParams);
+            result.append(URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8));
+            result.append("=");
+            result.append(URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8));
+        }
+
+        return result.toString();
     }
 
     /**
@@ -194,8 +193,8 @@ public class TokenManager {
      * @param code
      * @return
      */
-    public TokenResponse getAccessTokenFromCode(String code) {
-        HashMap<String, String> postDataParams = new HashMap<>();
+    public TokenResponse getAccessTokenFromCode(final String code) {
+        final HashMap<String, String> postDataParams = new HashMap<>();
         postDataParams.put("code", code);
         postDataParams.put("client_id", oauthconfig.getApiKey());
         postDataParams.put("grant_type", "authorization_code");
@@ -216,8 +215,8 @@ public class TokenManager {
      * @param token
      * @return
      */
-    public TokenResponse refreshToken(String token) {
-        HashMap<String, String> postDataParams = new HashMap<>();
+    public TokenResponse refreshToken(final String token) {
+        final HashMap<String, String> postDataParams = new HashMap<>();
         postDataParams.put("client_id", oauthconfig.getApiKey());
         postDataParams.put("grant_type", "refresh_token");
         postDataParams.put("refresh_token", token);

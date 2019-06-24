@@ -17,56 +17,19 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.lang.NonNull;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URL;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
 @RequestMapping(path = "/aisp/v1/")
 public class AISPController extends WSO2Controller {
     private static final Logger LOG = LoggerFactory.getLogger(AISPController.class);
-
-    private ResponseEntity handle(@NonNull String bankId, @NonNull User user, @NonNull String url) {
-        LOG.info("BankID: {} User {}", bankId, user);
-        try {
-            String userAccessToken = userAccessTokenIsValid(bankId, user.getUsername());
-            BankInfo bankInfo = getTokenManager(bankId).getOauthconfig().getBankInfo();
-
-            // Setup HTTP headers
-            HashMap<String, String> headers = new HashMap<>();
-            headers.put("Authorization", "Bearer " + userAccessToken);
-            headers.put("x-fapi-interaction-id", UUID.randomUUID().toString());
-            URL apiURL = new URL(bankInfo.getAccountsUrl() + url);
-            LOG.info("Call API: {}", apiURL);
-            HttpResponse httpResponse = doAPICall(false, apiURL, headers, null);
-
-            // Sometimes WSO2 respond errors in xml
-            String content = httpResponse.getContent();
-            checkWSO2Errors(content);
-            int respondCode = httpResponse.getResponseCode();
-            if (!(respondCode >= 200 && respondCode < 300)) {
-                LOG.error("Respond code {}; respond: [{}]", respondCode, content);
-            }
-            HttpStatus httpStatus = HttpStatus.resolve(respondCode);
-            return new ResponseEntity<>(content, null == httpStatus ? HttpStatus.BAD_REQUEST : httpStatus);
-        } catch (OAuthAuthorizationRequiredException oare) {
-            LOG.warn("Something went wrong!", oare);
-
-            HttpHeaders responseHeaders = new HttpHeaders();
-            responseHeaders.set("x-tpp-consentid", oare.getConsentId());
-            return new ResponseEntity<>("Require authorize", responseHeaders, HttpStatus.PRECONDITION_REQUIRED);
-        } catch (Throwable e) {
-            // Intended to catch Throwable
-            LOG.error("Something went wrong!", e);
-            return new ResponseEntity<>(e.getLocalizedMessage(), HttpStatus.BAD_REQUEST);
-        }
-    }
-
 
     /**
      * GetAccounts
@@ -75,9 +38,45 @@ public class AISPController extends WSO2Controller {
      * @param user
      * @return
      */
-    @GetMapping(path = "/accounts", produces = "application/json")
-    public ResponseEntity getAccounts(@RequestHeader(value = "x-tpp-bankid") String bankId, @AuthenticationPrincipal User user) {
+    @GetMapping(path = "accounts", produces = "application/json")
+    public ResponseEntity<String> getAccounts(@RequestHeader("x-tpp-bankid") final String bankId, @AuthenticationPrincipal final User user) {
         return handle(bankId, user, "/accounts");
+    }
+
+    private ResponseEntity<String> handle(final String bankId, final User user, final String url) {
+        LOG.info("BankID: {} User {}", bankId, user);
+        try {
+            final String userAccessToken = userAccessTokenIsValid(bankId, user.getUsername());
+            final BankInfo bankInfo = getTokenManager(bankId).getOauthconfig().getBankInfo();
+
+            // Setup HTTP headers
+            final Map<String, String> headers = new HashMap<>();
+            headers.put("Authorization", "Bearer " + userAccessToken);
+            headers.put("x-fapi-interaction-id", UUID.randomUUID().toString());
+            final URL apiURL = new URL(bankInfo.getAccountsUrl() + url);
+            LOG.info("Call API: {}", apiURL);
+            final HttpResponse httpResponse = hu.dpc.openbank.tpp.acefintech.backend.controller.WSO2Controller.doAPICall(false, apiURL, headers, null);
+
+            // Sometimes WSO2 respond errors in xml
+            final String content = httpResponse.getContent();
+            hu.dpc.openbank.tpp.acefintech.backend.controller.WSO2Controller.checkWSO2Errors(content);
+            final int respondCode = httpResponse.getResponseCode();
+            if (!(200 <= respondCode && 300 > respondCode)) {
+                LOG.error("Respond code {}; respond: [{}]", respondCode, content);
+            }
+            final HttpStatus httpStatus = HttpStatus.resolve(respondCode);
+            return new ResponseEntity<>(content, null == httpStatus ? HttpStatus.BAD_REQUEST : httpStatus);
+        } catch (final OAuthAuthorizationRequiredException oare) {
+            LOG.warn("Something went wrong!", oare);
+
+            final HttpHeaders responseHeaders = new HttpHeaders();
+            responseHeaders.set("x-tpp-consentid", oare.getConsentId());
+            return new ResponseEntity<>("Require authorize", responseHeaders, HttpStatus.PRECONDITION_REQUIRED);
+        } catch (final Throwable e) {
+            // Intended to catch Throwable
+            LOG.error("Something went wrong!", e);
+            return new ResponseEntity<>(e.getLocalizedMessage(), HttpStatus.BAD_REQUEST);
+        }
     }
 
     /**
@@ -88,8 +87,8 @@ public class AISPController extends WSO2Controller {
      * @param accountId
      * @return
      */
-    @GetMapping(path = "/accounts/{AccountId}", produces = "application/json")
-    public ResponseEntity getAccount(@RequestHeader(value = "x-tpp-bankid") String bankId, @AuthenticationPrincipal User user, @PathVariable("AccountId") String accountId) {
+    @GetMapping(path = "accounts/{AccountId}", produces = "application/json")
+    public ResponseEntity<String> getAccount(@RequestHeader("x-tpp-bankid") final String bankId, @AuthenticationPrincipal final User user, @PathVariable("AccountId") final String accountId) {
         return handle(bankId, user, "/accounts/" + accountId);
     }
 
@@ -100,8 +99,8 @@ public class AISPController extends WSO2Controller {
      * @param user
      * @return
      */
-    @GetMapping(path = "/balances", produces = "application/json")
-    public ResponseEntity getBalances(@RequestHeader(value = "x-tpp-bankid") String bankId, @AuthenticationPrincipal User user) {
+    @GetMapping(path = "balances", produces = "application/json")
+    public ResponseEntity<String> getBalances(@RequestHeader("x-tpp-bankid") final String bankId, @AuthenticationPrincipal final User user) {
         return handle(bankId, user, "/balances");
     }
 
@@ -113,8 +112,8 @@ public class AISPController extends WSO2Controller {
      * @param accountId
      * @return
      */
-    @GetMapping(path = "/accounts/{AccountId}/balances", produces = "application/json")
-    public ResponseEntity getBalance(@RequestHeader(value = "x-tpp-bankid") String bankId, @AuthenticationPrincipal User user, @PathVariable("AccountId") String accountId) {
+    @GetMapping(path = "accounts/{AccountId}/balances", produces = "application/json")
+    public ResponseEntity<String> getBalance(@RequestHeader("x-tpp-bankid") final String bankId, @AuthenticationPrincipal final User user, @PathVariable("AccountId") final String accountId) {
         return handle(bankId, user, "/accounts/" + accountId + "/balances");
     }
 

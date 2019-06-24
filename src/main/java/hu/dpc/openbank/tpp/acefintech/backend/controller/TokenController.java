@@ -27,18 +27,18 @@ public class TokenController extends WSO2Controller {
 
 
     @GetMapping(path = "/code/{Code}", produces = "application/json")
-    public ResponseEntity getTokenCode(@RequestHeader(value = "x-tpp-bankid") String bankId, @AuthenticationPrincipal User user, @PathVariable("Code") String code) {
-        TokenManager tokenManager = getTokenManager(bankId);
-        TokenResponse accessTokenResponse = tokenManager.getAccessTokenFromCode(code);
-        int responseCode = accessTokenResponse.getHttpResponseCode();
-        if (responseCode >= 200 && responseCode < 300) {
+    public ResponseEntity<String> getTokenCode(@RequestHeader("x-tpp-bankid") final String bankId, @AuthenticationPrincipal final User user, @PathVariable("Code") final String code) {
+        final TokenManager tokenManager = getTokenManager(bankId);
+        final TokenResponse accessTokenResponse = tokenManager.getAccessTokenFromCode(code);
+        final int responseCode = accessTokenResponse.getHttpResponseCode();
+        if (200 <= responseCode && 300 > responseCode) {
             createAndSaveUserAccessToken(accessTokenResponse, bankId, user.getUsername());
 
             return new ResponseEntity<>("", HttpStatus.OK);
         }
         LOG.warn("Code exchange not succeeded. HTTP[{}] RAWResponse [{}]", responseCode, accessTokenResponse.getRawContent());
-        String consentId = getConsentId(bankId);
-        LOG.info("No user AccessToken exists. OAuth authorization required! ConsentID: [" + consentId + "]");
+        final String consentId = getConsentId(bankId);
+        LOG.info("No user AccessToken exists. OAuth authorization required! ConsentID: [{}]", consentId);
         throw new OAuthAuthorizationRequiredException(consentId);
     }
 }

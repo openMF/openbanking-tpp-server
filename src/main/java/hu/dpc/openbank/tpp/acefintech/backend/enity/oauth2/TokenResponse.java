@@ -55,7 +55,7 @@ public class TokenResponse {
         return accessToken;
     }
 
-    public void setAccessToken(String accessToken) {
+    public void setAccessToken(final String accessToken) {
         this.accessToken = accessToken;
     }
 
@@ -63,7 +63,7 @@ public class TokenResponse {
         return refreshToken;
     }
 
-    public void setRefreshToken(String refreshToken) {
+    public void setRefreshToken(final String refreshToken) {
         this.refreshToken = refreshToken;
     }
 
@@ -71,7 +71,7 @@ public class TokenResponse {
         return scope;
     }
 
-    public void setScope(String scope) {
+    public void setScope(final String scope) {
         this.scope = scope;
     }
 
@@ -79,7 +79,7 @@ public class TokenResponse {
         return idToken;
     }
 
-    public void setIdToken(String idToken) {
+    public void setIdToken(final String idToken) {
         this.idToken = idToken;
     }
 
@@ -87,7 +87,7 @@ public class TokenResponse {
         return tokenType;
     }
 
-    public void setTokenType(String tokenType) {
+    public void setTokenType(final String tokenType) {
         this.tokenType = tokenType;
     }
 
@@ -95,15 +95,15 @@ public class TokenResponse {
         return expiresIn;
     }
 
-    public void setExpiresIn(long expiresIn) {
-        this.expiresIn = (expiresIn * 1000) + System.currentTimeMillis();
+    public void setExpiresIn(final long expiresIn) {
+        this.expiresIn = (expiresIn * 1000L) + System.currentTimeMillis();
     }
 
     public int getHttpResponseCode() {
         return httpResponseCode;
     }
 
-    public void setHttpResponseCode(int httpResponseCode) {
+    public void setHttpResponseCode(final int httpResponseCode) {
         this.httpResponseCode = httpResponseCode;
     }
 
@@ -111,7 +111,7 @@ public class TokenResponse {
         return error;
     }
 
-    public void setError(String error) {
+    public void setError(final String error) {
         this.error = error;
     }
 
@@ -119,7 +119,7 @@ public class TokenResponse {
         return errorDescription;
     }
 
-    public void setErrorDescription(String errorDescription) {
+    public void setErrorDescription(final String errorDescription) {
         this.errorDescription = errorDescription;
     }
 
@@ -127,7 +127,7 @@ public class TokenResponse {
         return subject;
     }
 
-    public void setSubject(String subject) {
+    public void setSubject(final String subject) {
         this.subject = subject;
     }
 
@@ -135,7 +135,7 @@ public class TokenResponse {
         return jwtExpires;
     }
 
-    public void setJwtExpires(long jwtExpires) {
+    public void setJwtExpires(final long jwtExpires) {
         this.jwtExpires = jwtExpires;
     }
 
@@ -143,7 +143,7 @@ public class TokenResponse {
         return rawContent;
     }
 
-    public void setRawContent(String rawContent) {
+    public void setRawContent(final String rawContent) {
         this.rawContent = rawContent;
     }
 }

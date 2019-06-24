@@ -21,7 +21,7 @@ public class OAuthConfig {
     private String subject;
     private BankInfo bankInfo;
 
-    public OAuthConfig(BankInfo bankInfo) throws MalformedURLException {
+    public OAuthConfig(final BankInfo bankInfo) throws MalformedURLException {
         this.bankInfo = bankInfo;
         apiKey = bankInfo.getClientId();
         apiSecret = bankInfo.getClientSecret();
@@ -36,7 +36,7 @@ public class OAuthConfig {
         return subject;
     }
 
-    public void setSubject(String subject) {
+    public void setSubject(final String subject) {
         this.subject = subject;
     }
 
@@ -44,7 +44,7 @@ public class OAuthConfig {
         return apiSecret;
     }
 
-    public void setApiSecret(String apiSecret) {
+    public void setApiSecret(final String apiSecret) {
         this.apiSecret = apiSecret;
     }
 
@@ -52,7 +52,7 @@ public class OAuthConfig {
         return tokenURL;
     }
 
-    public void setTokenURL(String tokenURL) throws MalformedURLException {
+    public void setTokenURL(final String tokenURL) throws MalformedURLException {
         this.tokenURL = new URL(tokenURL);
     }
 
@@ -60,7 +60,7 @@ public class OAuthConfig {
         return apiKey;
     }
 
-    public void setApiKey(String apiKey) {
+    public void setApiKey(final String apiKey) {
         this.apiKey = apiKey;
     }
 
@@ -68,7 +68,7 @@ public class OAuthConfig {
         return callbackURL;
     }
 
-    public void setCallbackURL(String callbackURL) {
+    public void setCallbackURL(final String callbackURL) {
         this.callbackURL = callbackURL;
     }
 

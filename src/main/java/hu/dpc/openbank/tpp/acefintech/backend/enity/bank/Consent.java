@@ -26,14 +26,11 @@ public class Consent {
     @Column(name="EXPIRES")
     private int expires;
 
-    public Consent() {
-    }
-
     public int getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(final int id) {
         this.id = id;
     }
 
@@ -41,7 +38,7 @@ public class Consent {
         return bankId;
     }
 
-    public void setBankId(String bankId) {
+    public void setBankId(final String bankId) {
         this.bankId = bankId;
     }
 
@@ -49,7 +46,7 @@ public class Consent {
         return consentId;
     }
 
-    public void setConsentId(String consentId) {
+    public void setConsentId(final String consentId) {
         this.consentId = consentId;
     }
 
@@ -57,7 +54,7 @@ public class Consent {
         return expires;
     }
 
-    public void setExpires(int expires) {
+    public void setExpires(final int expires) {
         this.expires = expires;
     }
 }

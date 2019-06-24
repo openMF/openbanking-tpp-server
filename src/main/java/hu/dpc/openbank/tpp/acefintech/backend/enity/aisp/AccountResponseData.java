@@ -22,7 +22,7 @@ public class AccountResponseData {
         return response;
     }
 
-    public void setResponse(AccountResponse response) {
+    public void setResponse(final AccountResponse response) {
         this.response = response;
     }
 }

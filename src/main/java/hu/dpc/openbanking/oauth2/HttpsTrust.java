@@ -17,39 +17,23 @@ import java.security.cert.X509Certificate;
 
 public class HttpsTrust {
 
-    static final public HttpsTrust INSTANCE = new HttpsTrust(new Ssl());
+    public static final HttpsTrust INSTANCE = new HttpsTrust(new HttpsTrust.Ssl());
 
-    static class Ssl {
-        SSLSocketFactory newFactory(TrustManager... managers) throws NoSuchAlgorithmException, KeyManagementException {
-            SSLContext context = SSLContext.getInstance("TLS");
-            context.init(null, managers, new SecureRandom());
-            return context.getSocketFactory();
-        }
+    private HttpsTrust(final HttpsTrust.Ssl context) {
+        socketFactory = createSocketFactory(context);
+        hostnameVerifier = createHostnameVerifier();
     }
 
     private final SSLSocketFactory socketFactory;
     private final HostnameVerifier hostnameVerifier;
 
-    private HttpsTrust(Ssl context) {
-        this.socketFactory = createSocketFactory(context);
-        this.hostnameVerifier = createHostnameVerifier();
-    }
-
-    public void trust(HttpURLConnection connection) {
-        if (connection instanceof HttpsURLConnection) {
-            HttpsURLConnection httpsConnection = (HttpsURLConnection) connection;
-            httpsConnection.setSSLSocketFactory(socketFactory);
-            httpsConnection.setHostnameVerifier(hostnameVerifier);
-        }
-    }
-
     /**
      * Trust all certificates
      */
-    private static SSLSocketFactory createSocketFactory(Ssl context) {
+    private static SSLSocketFactory createSocketFactory(final HttpsTrust.Ssl context) {
         try {
-            return context.newFactory(new AlwaysTrustManager());
-        } catch (Exception e) {
+            return HttpsTrust.Ssl.newFactory(new HttpsTrust.AlwaysTrustManager());
+        } catch (final Exception e) {
             throw new IllegalStateException("Fail to build SSL factory", e);
         }
     }
@@ -60,10 +44,26 @@ public class HttpsTrust {
     private static HostnameVerifier createHostnameVerifier() {
         return new HostnameVerifier() {
             @Override
-            public boolean verify(String hostname, SSLSession session) {
+            public boolean verify(@javax.annotation.Nullable final String hostname, @javax.annotation.Nullable final SSLSession session) {
                 return true;
             }
         };
+    }
+
+    public void trust(final HttpURLConnection connection) {
+        if (connection instanceof HttpsURLConnection) {
+            final HttpsURLConnection httpsConnection = (HttpsURLConnection) connection;
+            httpsConnection.setSSLSocketFactory(socketFactory);
+            httpsConnection.setHostnameVerifier(hostnameVerifier);
+        }
+    }
+
+    static class Ssl {
+        static SSLSocketFactory newFactory(final TrustManager... managers) throws NoSuchAlgorithmException, KeyManagementException {
+            final SSLContext context = SSLContext.getInstance("TLS");
+            context.init(null, managers, new SecureRandom());
+            return context.getSocketFactory();
+        }
     }
 
     static class AlwaysTrustManager implements X509TrustManager {
@@ -73,12 +73,12 @@ public class HttpsTrust {
         }
 
         @Override
-        public void checkClientTrusted(X509Certificate[] chain, String authType) {
+        public void checkClientTrusted(@javax.annotation.Nullable final X509Certificate[] chain, @javax.annotation.Nullable final String authType) {
             // Do not check
         }
 
         @Override
-        public void checkServerTrusted(X509Certificate[] chain, String authType) {
+        public void checkServerTrusted(@javax.annotation.Nullable final X509Certificate[] chain, @javax.annotation.Nullable final String authType) {
             // Do not check
         }
     }
