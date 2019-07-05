@@ -348,8 +348,7 @@ paths:
         - $ref: '#/parameters/Authorization'
       responses:
         '200':
-          $ref: >-
-            #/responses/200DomesticScheduledPaymentsDomesticScheduledPaymentIdRead
+          $ref: '#/responses/200DomesticScheduledPaymentsDomesticScheduledPaymentIdRead'
         '400':
           $ref: '#/responses/400Error'
         '401':
@@ -383,8 +382,7 @@ paths:
         - $ref: '#/parameters/Authorization'
       responses:
         '200':
-          $ref: >-
-            #/responses/200DomesticScheduledPaymentsDomesticScheduledPaymentIdPaymentDetailsRead
+          $ref: '#/responses/200DomesticScheduledPaymentsDomesticScheduledPaymentIdPaymentDetailsRead'
         '400':
           $ref: '#/responses/400Error'
         '401':
@@ -558,8 +556,7 @@ paths:
         - $ref: '#/parameters/Authorization'
       responses:
         '200':
-          $ref: >-
-            #/responses/200DomesticStandingOrdersDomesticStandingOrderIdPaymentDetailsRead
+          $ref: '#/responses/200DomesticStandingOrdersDomesticStandingOrderIdPaymentDetailsRead'
         '400':
           $ref: '#/responses/400Error'
         '401':
@@ -941,8 +938,7 @@ paths:
         - $ref: '#/parameters/Authorization'
       responses:
         '200':
-          $ref: >-
-            #/responses/200InternationalPaymentConsentsConsentIdFundsConfirmationRead
+          $ref: '#/responses/200InternationalPaymentConsentsConsentIdFundsConfirmationRead'
         '400':
           $ref: '#/responses/400Error'
         '401':

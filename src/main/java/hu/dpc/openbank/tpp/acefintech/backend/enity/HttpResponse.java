@@ -12,9 +12,6 @@ public class HttpResponse {
     private String content;
     private int responseCode;
 
-    public HttpResponse() {
-    }
-
     public String getContent() {
         return content;
     }

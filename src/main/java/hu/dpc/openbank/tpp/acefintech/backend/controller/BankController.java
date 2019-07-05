@@ -24,7 +24,7 @@ public class BankController {
         this.bankRepository = bankRepository;
     }
 
-    @GetMapping(path = "/supported", produces = "application/json")
+    @GetMapping(path = "/supported", produces = WSO2Controller.APPLICATION_JSON)
     public SupportedBanks getSupportedBanks() {
         final SupportedBanks supportedBanks = new SupportedBanks();
         supportedBanks.setBankInfoList(bankRepository.findAll());

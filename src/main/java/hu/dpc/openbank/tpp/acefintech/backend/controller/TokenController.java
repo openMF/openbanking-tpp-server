@@ -26,8 +26,8 @@ public class TokenController extends WSO2Controller {
     private static final Logger LOG = LoggerFactory.getLogger(TokenController.class);
 
 
-    @GetMapping(path = "/code/{Code}", produces = "application/json")
-    public ResponseEntity<String> getTokenCode(@RequestHeader("x-tpp-bankid") final String bankId, @AuthenticationPrincipal final User user, @PathVariable("Code") final String code) {
+    @GetMapping(path = "/code/{Code}", produces = APPLICATION_JSON)
+    public ResponseEntity<String> getTokenCode(@RequestHeader(WSO2Controller.X_TPP_BANKID) final String bankId, @AuthenticationPrincipal final User user, @PathVariable("Code") final String code) {
         final TokenManager tokenManager = getTokenManager(bankId);
         final TokenResponse accessTokenResponse = tokenManager.getAccessTokenFromCode(code);
         final int responseCode = accessTokenResponse.getHttpResponseCode();

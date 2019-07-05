@@ -12,6 +12,7 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import hu.dpc.openbank.tpp.acefintech.backend.controller.WSO2Controller;
 import hu.dpc.openbank.tpp.acefintech.backend.enity.oauth2.TokenResponse;
 import hu.dpc.openbank.tpp.acefintech.backend.repository.APICallException;
 import org.slf4j.Logger;
@@ -38,21 +39,6 @@ public class TokenManager {
 
     public TokenManager(final OAuthConfig config) {
         oauthconfig = config;
-    }
-
-    private static void debugToken(final TokenResponse token) {
-        System.out.println("HTTP: " + token.getHttpResponseCode());
-        System.out.println("Access token: " + token.getAccessToken());
-        System.out.println("Refresh token: " + token.getRefreshToken());
-        System.out.println("Scope: " + token.getScope());
-        System.out.println("ID Token: " + token.getIdToken());
-        System.out.println("Token type: " + token.getTokenType());
-        System.out.println("Expires in: " + token.getExpiresIn());
-        System.out.println("Subject: " + token.getSubject());
-        System.out.println("JWT expires: " + token.getJwtExpires());
-        System.err.println("Error: " + token.getError());
-        System.err.println("Error description: " + token.getErrorDescription());
-
     }
 
     /**
@@ -82,7 +68,7 @@ public class TokenManager {
      * @param postDataParams required params.k
      * @return
      */
-    private TokenResponse doPost(final HashMap<String, String> postDataParams) {
+    private TokenResponse doPost(final Map<String, String> postDataParams) {
         int responseCode = -1;
         for (int trycount = HttpHelper.CONNECTION_REFUSED_TRYCOUNT; 0 < trycount--; ) {
             try {
@@ -97,7 +83,7 @@ public class TokenManager {
                 conn.setDoInput(true);
                 conn.setDoOutput(true);
 
-                conn.setRequestProperty("Accept", "application/json");
+                conn.setRequestProperty("Accept", WSO2Controller.APPLICATION_JSON);
                 conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
 
                 final String authorization = Base64.getEncoder().encodeToString((oauthconfig.getApiKey() + ':' + oauthconfig.getApiSecret()).getBytes());

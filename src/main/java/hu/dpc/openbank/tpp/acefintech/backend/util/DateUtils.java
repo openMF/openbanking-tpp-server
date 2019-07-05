@@ -24,7 +24,7 @@ import java.util.TimeZone;
 public class DateUtils {
 
     public static final String ISO8601_DATE_TIME_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
-    public static final DateTimeFormatter ISO8601_UTC_DATE_TIME_FORMAT = DateTimeFormatter.ofPattern(DateUtils.ISO8601_DATE_TIME_PATTERN);
+    public static final DateTimeFormatter ISO8601_UTC_DATE_TIME_FORMAT = DateTimeFormatter.ofPattern(ISO8601_DATE_TIME_PATTERN);
 
     private static final SimpleDateFormat LOCAL_DATE_TIME_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
 
@@ -33,11 +33,11 @@ public class DateUtils {
     }
 
     public static @NotNull ZoneId getZoneIdOfTenant() {
-        return ZoneId.of(DateUtils.getTimezoneIdOfTenant());
+        return ZoneId.of(getTimezoneIdOfTenant());
     }
 
     public static @NotNull TimeZone getTimeZoneOfTenant() {
-        return TimeZone.getTimeZone(DateUtils.getTimezoneIdOfTenant());
+        return TimeZone.getTimeZone(getTimezoneIdOfTenant());
     }
 
     private static long getMillisOfTenant() {
@@ -48,202 +48,201 @@ public class DateUtils {
      * @return business date of the current tenant
      */
     public static Date getDateOfTenant() {
-        return new Date(DateUtils.getMillisOfTenant());
+        return new Date(getMillisOfTenant());
     }
 
     public static @NotNull Timestamp getDateTimeOfTenant() {
-        return new Timestamp(DateUtils.getMillisOfTenant());
+        return new Timestamp(getMillisOfTenant());
     }
 
     public static @NotNull LocalDate getLocalDateOfTenant() {
-        return LocalDate.now(DateUtils.getZoneIdOfTenant());
+        return LocalDate.now(getZoneIdOfTenant());
     }
 
     public static @NotNull LocalDate getLocalDateOfTenant(final Date date) {
-        return date == null ? null : date.toInstant().atZone(DateUtils.getZoneIdOfTenant()).toLocalDate();
+        return null == date ? null : date.toInstant().atZone(getZoneIdOfTenant()).toLocalDate();
     }
 
     public static @NotNull LocalDateTime getLocalDateTimeOfTenant() {
-        return LocalDateTime.now(DateUtils.getZoneIdOfTenant());
+        return LocalDateTime.now(getZoneIdOfTenant());
     }
 
     public static @NotNull LocalDateTime getLocalDateTimeOfTenant(final Timestamp stamp) {
-        return stamp == null ? null : stamp.toLocalDateTime();
+        return null == stamp ? null : stamp.toLocalDateTime();
     }
 
-    public static int compareDatePart(@NotNull final Date first, @NotNull final Date second) {
-        return DateUtils.getDatePartOf(first).compareTo(DateUtils.getDatePartOf(second));
+    public static int compareDatePart(final @NotNull Date first, final @NotNull Date second) {
+        return getDatePartOf(first).compareTo(getDatePartOf(second));
     }
 
-    public static boolean isEquals(@NotNull final Date first, @NotNull final Date second) {
-        return first == null
-                ? second == null
-                : second != null && DateUtils.compareDatePart(first, second) == 0;
+    public static boolean isEquals(final @NotNull Date first, final @NotNull Date second) {
+        return null == first
+                ? null == second
+                : null != second && 0 == compareDatePart(first, second);
     }
 
-    public static boolean isEquals(@NotNull final LocalDate first, @NotNull final LocalDate second) {
-        return first == null
-                ? second == null
-                : second != null && DateUtils.compareDatePart(first, second) == 0;
+    public static boolean isEquals(final @NotNull LocalDate first, final @NotNull LocalDate second) {
+        return null == first
+                ? null == second
+                : null != second && 0 == compareDatePart(first, second);
     }
 
-    public static boolean isBefore(@NotNull final Date first, @NotNull final Date second) {
-        return first == null || (second != null && DateUtils.compareDatePart(first, second) < 0);
+    public static boolean isBefore(final @NotNull Date first, final @NotNull Date second) {
+        return null == first || (null != second && 0 > compareDatePart(first, second));
     }
 
-    public static boolean isBefore(@NotNull final LocalDate first, @NotNull final LocalDate second) {
-        return first == null || (second != null && DateUtils.compareDatePart(first, second) < 0);
+    public static boolean isBefore(final @NotNull LocalDate first, final @NotNull LocalDate second) {
+        return null == first || (null != second && 0 > compareDatePart(first, second));
     }
 
-    public static boolean isAfter(@NotNull final Date first, @NotNull final Date second) {
-        return first != null && (second == null || DateUtils.compareDatePart(first, second) > 0);
+    public static boolean isAfter(final @NotNull Date first, final @NotNull Date second) {
+        return null != first && (null == second || 0 < compareDatePart(first, second));
     }
 
-    public static boolean isAfter(@NotNull final LocalDate first, @NotNull final LocalDate second) {
-        return first != null && (second == null || DateUtils.compareDatePart(first, second) > 0);
+    public static boolean isAfter(final @NotNull LocalDate first, final @NotNull LocalDate second) {
+        return null != first && (null == second || 0 < compareDatePart(first, second));
     }
 
     /**
      * @return the date which is not null and earlier than the other. Still can return null if both dates are null
      */
-    public static Date getEarlierNotNull(@NotNull final Date first, @NotNull final Date second) {
-        if (first == null)
+    public static Date getEarlierNotNull(final @NotNull Date first, final @NotNull Date second) {
+        if (null == first)
             return second;
-        if (second == null)
+        if (null == second)
             return first;
-        return DateUtils.isBefore(first, second) ? first : second;
+        return isBefore(first, second) ? first : second;
     }
 
-    public static int compareDatePart(@NotNull final LocalDate first, @NotNull final LocalDate second) {
+    public static int compareDatePart(final @NotNull LocalDate first, final @NotNull LocalDate second) {
         return first.compareTo(second);
     }
 
     public static @NotNull int compareToDateOfTenant(final Date date) {
-        return DateUtils.compareDatePart(date, DateUtils.getDateOfTenant());
+        return compareDatePart(date, getDateOfTenant());
     }
 
     public static @NotNull int compareToDateOfTenant(final LocalDate date) {
-        return DateUtils.compareDatePart(date, DateUtils.getLocalDateOfTenant());
+        return compareDatePart(date, getLocalDateOfTenant());
     }
 
     public static @NotNull boolean isBeforeDateOfTenant(final Date date) {
-        return DateUtils.compareToDateOfTenant(date) < 0;
+        return 0 > compareToDateOfTenant(date);
     }
 
     public static @NotNull boolean isBeforeDateOfTenant(final LocalDate date) {
-        return DateUtils.compareToDateOfTenant(date) < 0;
+        return 0 > compareToDateOfTenant(date);
     }
 
     public static @NotNull boolean isAfterDateOfTenant(final Date date) {
-        return DateUtils.compareToDateOfTenant(date) > 0;
+        return 0 < compareToDateOfTenant(date);
     }
 
     public static @NotNull boolean isAfterDateOfTenant(final LocalDate date) {
-        return DateUtils.compareToDateOfTenant(date) > 0;
+        return 0 < compareToDateOfTenant(date);
     }
 
     public static @NotNull Date getDatePartOf(final Date date) {
-        return DateUtils.toDate(DateUtils.toLocalDate(date));
+        return toDate(toLocalDate(date));
     }
 
     public static Date toDate(final LocalDate localDate) {
-        return localDate == null ? null : Date.from(localDate.atStartOfDay(DateUtils.getZoneIdOfTenant()).toInstant());
+        return null == localDate ? null : Date.from(localDate.atStartOfDay(getZoneIdOfTenant()).toInstant());
     }
 
     public static Date toDate(final LocalDateTime localDateTime) {
-        return localDateTime == null ? null : Date.from(localDateTime.atZone(DateUtils.getZoneIdOfTenant()).toInstant());
+        return null == localDateTime ? null : Date.from(localDateTime.atZone(getZoneIdOfTenant()).toInstant());
     }
 
     public static LocalDate toLocalDate(final Date date) {
-        return date.toInstant().atZone(DateUtils.getZoneIdOfTenant()).toLocalDate();
+        return date.toInstant().atZone(getZoneIdOfTenant()).toLocalDate();
     }
 
     public static LocalDateTime toLocalDateTime(final Date date) {
-        return date.toInstant().atZone(DateUtils.getZoneIdOfTenant()).toLocalDateTime();
+        return date.toInstant().atZone(getZoneIdOfTenant()).toLocalDateTime();
     }
 
     public static Date plusDays(final Date date, final int days) {
-        return date == null
+        return null == date
                 ? null
-                : days == 0 ? date : DateUtils.toDate(DateUtils.toLocalDate(date).plusDays(days));
+                : 0 == days ? date : toDate(toLocalDate(date).plusDays(days));
     }
 
     public static LocalDate plusDays(final LocalDate date, final int days) {
-        return date == null
+        return null == date
                 ? null
                 : date.plusDays(days);
     }
 
     public static Date minusDays(final Date date, final int days) {
-        return date == null
+        return null == date
                 ? null
-                : days == 0 ? date : DateUtils.toDate(DateUtils.toLocalDate(date).minusDays(days));
+                : 0 == days ? date : toDate(toLocalDate(date).minusDays(days));
     }
 
     public static LocalDate minusDays(final LocalDate date, final int days) {
-        return date == null
+        return null == date
                 ? null
                 : date.minusDays(days);
     }
 
-    public static long daysBetween(@NotNull final Date first, @NotNull final Date second) {
-        final ZoneId zoneId = DateUtils.getZoneIdOfTenant();
+    public static long daysBetween(final @NotNull Date first, final @NotNull Date second) {
+        final ZoneId zoneId = getZoneIdOfTenant();
         return ChronoUnit.DAYS.between(first.toInstant().atZone(zoneId), second.toInstant().atZone(zoneId));
     }
 
-    public static long daysBetween(@NotNull final LocalDate first, @NotNull final LocalDate second) {
+    public static long daysBetween(final @NotNull LocalDate first, final @NotNull LocalDate second) {
         return ChronoUnit.DAYS.between(first, second);
     }
 
     public static LocalDate parseLocalDate(final String stringDate, final String pattern, final Locale clientLocale) {
-        final DateTimeFormatter formatter = DateTimeFormatter.ofPattern(pattern).withLocale(clientLocale).withZone(DateUtils.getZoneIdOfTenant());
+        final DateTimeFormatter formatter = DateTimeFormatter.ofPattern(pattern).withLocale(clientLocale).withZone(getZoneIdOfTenant());
         return LocalDate.parse(stringDate, formatter);
     }
 
     public static String formatToSqlDate(final Date date) {
         final DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-        df.setTimeZone(DateUtils.getTimeZoneOfTenant());
-        final String formattedSqlDate = df.format(date);
-        return formattedSqlDate;
+        df.setTimeZone(getTimeZoneOfTenant());
+        return df.format(date);
     }
 
-    public static @NotNull String toIsoString(@NotNull final Date date) {
-        return DateUtils.toIsoString(LocalDateTime.ofInstant(date.toInstant(), ZoneId.of("UTC")));
+    public static @NotNull String toIsoString(final @NotNull Date date) {
+        return toIsoString(LocalDateTime.ofInstant(date.toInstant(), ZoneId.of("UTC")));
     }
 
-    public static @NotNull String toIsoString(@NotNull final LocalDateTime localDateTime) {
+    public static @NotNull String toIsoString(final @NotNull LocalDateTime localDateTime) {
         Assert.notNull(localDateTime, "LocalDateTime must be given.");
         return localDateTime.format(DateTimeFormatter.ISO_DATE_TIME) + "Z";
     }
 
-    public static @NotNull LocalDateTime fromIsoString(@NotNull final String isoDateTimeString) {
+    public static @NotNull LocalDateTime fromIsoString(final @NotNull String isoDateTimeString) {
         Assert.notNull(isoDateTimeString, "ISO date time must be given.");
         return LocalDateTime.from(Instant.parse(isoDateTimeString).atZone(ZoneOffset.UTC));
     }
 
-    public static @NotNull LocalDate dateFromIsoString(@NotNull final String isoDateString) {
+    public static @NotNull LocalDate dateFromIsoString(final @NotNull String isoDateString) {
         Assert.notNull(isoDateString, "ISO date time must be given.");
         final int zIndex = isoDateString.indexOf("Z");
         final String shortenedString = isoDateString.substring(0, zIndex);
         return LocalDate.from(DateTimeFormatter.ISO_LOCAL_DATE.parse(shortenedString));
     }
 
-    public static @NotNull String toIsoString(@NotNull final LocalDate localDate) {
+    public static @NotNull String toIsoString(final @NotNull LocalDate localDate) {
         Assert.notNull(localDate, "LocalDateTime must be given.");
         return localDate.format(DateTimeFormatter.ISO_DATE) + "Z";
     }
 
-    public static @NotNull LocalDate toLocalDate(@NotNull final LocalDateTime localDateTime) {
+    public static @NotNull LocalDate toLocalDate(final @NotNull LocalDateTime localDateTime) {
         Assert.notNull(localDateTime, "LocalDateTime must be given.");
         return localDateTime.toLocalDate();
     }
 
     public static LocalDateTime parseLocalFormatDateTime(final String date) {
-        return date == null ? null : LocalDateTime.ofInstant(OffsetDateTime.parse(date).toInstant(), ZoneOffset.UTC);
+        return null == date ? null : LocalDateTime.ofInstant(OffsetDateTime.parse(date).toInstant(), ZoneOffset.UTC);
     }
 
     public static String formatLocalFormatDateTime(final LocalDateTime date) {
-        return date == null ? null : DateUtils.LOCAL_DATE_TIME_FORMAT.format(Date.from(date.toInstant(ZoneOffset.UTC)));
+        return null == date ? null : LOCAL_DATE_TIME_FORMAT.format(Date.from(date.toInstant(ZoneOffset.UTC)));
     }
 
     public static void main(final String[] args) throws ParseException {

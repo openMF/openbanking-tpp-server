@@ -26,7 +26,7 @@ public class UserController {
         this.bankRepository = bankRepository;
     }
 
-    @GetMapping(path = "/banks", produces = "application/json")
+    @GetMapping(path = "/banks", produces = WSO2Controller.APPLICATION_JSON)
     public SupportedBanks getSupportedBanks(@AuthenticationPrincipal final User user) {
         final SupportedBanks supportedBanks = new SupportedBanks();
         supportedBanks.setBankInfoList(bankRepository.getUserConnectedBanks(user.getUsername()));
