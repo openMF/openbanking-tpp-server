@@ -12,6 +12,7 @@ package hu.dpc.openbank.tpp.acefintech.backend.controller.pisp;
 import hu.dpc.openbank.tpp.acefintech.backend.controller.WSO2Controller;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.User;
@@ -21,6 +22,33 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping(path = "/pisp/v1/")
 public class DomesticPaymentsController extends WSO2Controller {
     private static final Logger LOG = LoggerFactory.getLogger(DomesticPaymentsController.class);
+
+
+    /**
+     * @param bankId
+     * @param user
+     * @return
+     */
+    @PostMapping(path = "preparePayment", produces = APPLICATION_JSON)
+    public ResponseEntity<String> preparePayment(@RequestHeader(WSO2Controller.X_TPP_BANKID) final String bankId, @AuthenticationPrincipal final User user, @RequestBody final String body) {
+// TODO Create Consent
+// TODO Return consentId and other variables to GUI initiate /authorize request
+        return new ResponseEntity<String>("", HttpStatus.OK);
+    }
+
+
+    /**
+     * @param bankId
+     * @param user
+     * @return
+     */
+    @PostMapping(path = "executePayment/{ConsentId}", produces = APPLICATION_JSON)
+    public ResponseEntity<String> executePayment(@RequestHeader(WSO2Controller.X_TPP_BANKID) final String bankId, @AuthenticationPrincipal final User user, @PathVariable(CONSENT_ID) final String consentId) {
+// TODO Find payment based on consentId
+// TODO Execute payment
+// TODO status
+        return new ResponseEntity<String>("", HttpStatus.OK);
+    }
 
     /**
      * @param bankId

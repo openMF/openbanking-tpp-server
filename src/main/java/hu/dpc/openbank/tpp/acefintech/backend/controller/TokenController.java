@@ -28,6 +28,8 @@ public class TokenController extends WSO2Controller {
 
     @GetMapping(path = "/code/{Code}", produces = APPLICATION_JSON)
     public ResponseEntity<String> getTokenCode(@RequestHeader(WSO2Controller.X_TPP_BANKID) final String bankId, @AuthenticationPrincipal final User user, @PathVariable("Code") final String code) {
+        // TODO ConsentID-t is vissza kell kapni és le kell tárolni a userhez
+
         final TokenManager tokenManager = getTokenManager(bankId);
         final TokenResponse accessTokenResponse = tokenManager.getAccessTokenFromCode(code);
         final int responseCode = accessTokenResponse.getHttpResponseCode();

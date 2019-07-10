@@ -1042,8 +1042,7 @@ paths:
         - $ref: '#/parameters/Authorization'
       responses:
         '200':
-          $ref: >-
-            #/responses/200InternationalPaymentsInternationalPaymentIdPaymentDetailsRead
+          $ref: '#/responses/200InternationalPaymentsInternationalPaymentIdPaymentDetailsRead'
         '400':
           $ref: '#/responses/400Error'
         '401':
@@ -1147,8 +1146,7 @@ paths:
         - $ref: '#/parameters/Authorization'
       responses:
         '200':
-          $ref: >-
-            #/responses/200InternationalScheduledPaymentConsentsConsentIdFundsConfirmationRead
+          $ref: '#/responses/200InternationalScheduledPaymentConsentsConsentIdFundsConfirmationRead'
         '400':
           $ref: '#/responses/400Error'
         '401':
@@ -1218,8 +1216,7 @@ paths:
         - $ref: '#/parameters/Authorization'
       responses:
         '200':
-          $ref: >-
-            #/responses/200InternationalScheduledPaymentsInternationalScheduledPaymentIdRead
+          $ref: '#/responses/200InternationalScheduledPaymentsInternationalScheduledPaymentIdRead'
         '400':
           $ref: '#/responses/400Error'
         '401':
@@ -1254,8 +1251,7 @@ paths:
         - $ref: '#/parameters/Authorization'
       responses:
         '200':
-          $ref: >-
-            #/responses/200InternationalScheduledPaymentsInternationalScheduledPaymentIdPaymentDetailsRead
+          $ref: '#/responses/200InternationalScheduledPaymentsInternationalScheduledPaymentIdPaymentDetailsRead'
         '400':
           $ref: '#/responses/400Error'
         '401':
@@ -1395,8 +1391,7 @@ paths:
         - $ref: '#/parameters/Authorization'
       responses:
         '200':
-          $ref: >-
-            #/responses/200InternationalStandingOrdersInternationalStandingOrderPaymentIdRead
+          $ref: '#/responses/200InternationalStandingOrdersInternationalStandingOrderPaymentIdRead'
         '400':
           $ref: '#/responses/400Error'
         '401':
@@ -1431,8 +1426,7 @@ paths:
         - $ref: '#/parameters/Authorization'
       responses:
         '200':
-          $ref: >-
-            #/responses/200InternationalStandingOrdersInternationalStandingOrderPaymentIdPaymentDetailsRead
+          $ref: '#/responses/200InternationalStandingOrdersInternationalStandingOrderPaymentIdPaymentDetailsRead'
         '400':
           $ref: '#/responses/400Error'
         '401':
