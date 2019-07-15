@@ -54,7 +54,7 @@ public class DomesticPaymentsController extends WSO2Controller {
      * @return
      */
 //    @PostMapping(path = "preparePayment")
-    @GetMapping(path = "preparePayment")
+    @PostMapping(path = "preparePayment")
     public ResponseEntity<String> preparePayment(@RequestHeader(WSO2Controller.X_TPP_BANKID) final String bankId, @AuthenticationPrincipal final User user, @RequestBody final String body) {
         LOG.info("preparePayment called bankid={} userName={}", bankId, user.getUsername());
         final OBWriteDomesticConsentResponse3 response = getConsentId(bankId, body);
@@ -77,7 +77,7 @@ public class DomesticPaymentsController extends WSO2Controller {
      * @param user
      * @return
      */
-    @GetMapping(path = "executePayment/{ConsentId}", produces = APPLICATION_JSON)
+    @PostMapping(path = "executePayment/{ConsentId}", produces = APPLICATION_JSON)
     public ResponseEntity<String> executePayment(@RequestHeader(WSO2Controller.X_TPP_BANKID) final String bankId, @AuthenticationPrincipal final User user, @PathVariable(CONSENT_ID) final String consentId) {
         LOG.info("executePayment called bankid={} consentId={} userName={}", bankId, consentId, user.getUsername());
         final PaymentConsent paymentConsent;
@@ -119,7 +119,7 @@ public class DomesticPaymentsController extends WSO2Controller {
     }
 
     /**
-     * Get Accounts ConsentId
+     * Get Payments ConsentId
      *
      * @param bankId
      * @return consentId if request it was not success return empty.
