@@ -78,6 +78,18 @@
             <artifactId>swagger-annotations</artifactId>
             <version>1.5.0</version>
         </dependency>
+
+        <!-- Liquibase -->
+        <dependency>
+            <groupId>org.liquibase</groupId>
+            <artifactId>liquibase-core</artifactId>
+            <version>3.6.3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.liquibase.ext</groupId>
+            <artifactId>liquibase-hibernate5</artifactId>
+            <version>3.7</version>
+        </dependency>
     </dependencies>
 
     <build>

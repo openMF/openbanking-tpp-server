@@ -1,0 +1,21 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1000
+      author: https://mozilla.org/MPL/2.0/
+      changes:
+        - sqlFile:
+            dbms: hsqldb
+            encoding: utf8
+            endDelimiter: ;
+            path: sql/create-1.0.sql
+            relativeToChangelogFile: true
+            splitStatements: true
+            stripComments: true
+        - sqlFile:
+            dbms: hsqldb
+            encoding: utf8
+            endDelimiter: ;
+            path: sql/init-1.0.sql
+            relativeToChangelogFile: true
+            splitStatements: true
+            stripComments: true
