@@ -55,7 +55,16 @@ import java.util.UUID;
 @ParametersAreNonnullByDefault
 public class WSO2Controller {
 
-    private static final String SCOPE_ACCOUNTS = "accounts";
+    @NonNls
+    public static final String X_TPP_BANKID = "x-tpp-bankid";
+    @NonNls
+    public static final String ACCOUNT_ID = "AccountId";
+    @NonNls
+    public static final String APPLICATION_JSON = "application/json";
+    @NonNls
+    public static final String CONSENT_ID = "ConsentId";
+    public static final String SCOPE_ACCOUNTS = "accounts";
+    public static final String SCOPE_PAYMENTS = "payments";
     private static final Logger LOG = LoggerFactory.getLogger(WSO2Controller.class);
     private static final HashMap<String, TokenManager> tokenManagerCache = new HashMap<>();
     private static final HashMap<String, AccessToken> clientAccessTokenCache = new HashMap<>();
@@ -66,14 +75,6 @@ public class WSO2Controller {
     //    "<am:fault xmlns:am=\"http://wso2.org/apimanager\"><am:code>303001</am:code><am:type>Status report</am:type><am:message>Runtime Error</am:message><am:description>Currently , Address endpoint : [ Name : AccountInformationAPI--vv1_APIproductionEndpoint ] [ State : SUSPENDED ]</am:description></am:fault>";
     private static final String BANK_APIS_SUSPENDED = "<am:fault xmlns:am=\"http://wso2.org/apimanager\"><am:code>303001</am:code>";
     private static final String WSO2_METHOD_NOT_FOUND = "<am:fault xmlns:am=\"http://wso2.org/apimanager\"><am:code>404</am:code><am:type>Status report</am:type><am:message>Runtime Error</am:message><am:description>No matching resource found for given API Request</am:description></am:fault>";
-    @NonNls
-    public static final String X_TPP_BANKID = "x-tpp-bankid";
-    @NonNls
-    public static final String ACCOUNT_ID = "AccountId";
-    @NonNls
-    public static final String APPLICATION_JSON = "application/json";
-    @NonNls
-    public static final String CONSENT_ID = "ConsentId";
     @Autowired
     private AccessTokenRepository accessTokenRepository;
     /**
@@ -101,7 +102,7 @@ public class WSO2Controller {
                 conn.setConnectTimeout(15000);
                 conn.setRequestMethod(httpMethod.name());
                 conn.setDoInput(true);
-                final boolean hasContent = !(null == jsonContentData && jsonContentData.isEmpty());
+                final boolean hasContent = !(null == jsonContentData || jsonContentData.isEmpty());
 
                 conn.setDoOutput(hasContent);
 
@@ -184,7 +185,7 @@ public class WSO2Controller {
      */
     public String userAccessTokenIsValid(final String bankId, final String userName) {
         LOG.info("userAccessTokenIsValid: bankId {} userName {}", bankId, userName);
-        AccessToken userAccessToken = getLatestUserAccessToken(userName, bankId);
+        AccessToken userAccessToken = getLatestUserAccessToken(userName, bankId, SCOPE_ACCOUNTS);
         if (null == userAccessToken) {
             final String consentId = getConsentId(bankId);
             LOG.info("No user AccessToken exists. OAuth authorization required! ConsentID: [{}]", consentId);
@@ -197,12 +198,42 @@ public class WSO2Controller {
             final TokenResponse refreshToken = tokenManager.refreshToken(userAccessToken.getRefreshToken());
 
             if (HttpURLConnection.HTTP_OK == refreshToken.getHttpResponseCode()) {
-                userAccessToken = createAndSaveUserAccessToken(refreshToken, bankId, userName);
+                userAccessToken = createAndSaveUserAccessToken(refreshToken, bankId, userName, SCOPE_ACCOUNTS);
             } else {
                 LOG.warn("Refresh token refreshing not succeeded. HTTP[{}] RAWResponse [{}]", refreshToken.getHttpResponseCode(), refreshToken.getRawContent());
                 final String consentId = getConsentId(bankId);
                 LOG.info("No user AccessToken exists. OAuth authorization required! ConsentID: [{}]", consentId);
                 throw new OAuthAuthorizationRequiredException(consentId);
+            }
+        }
+
+        return userAccessToken.getAccessToken();
+    }
+
+    /**
+     * Check user AccessToken is valid and not expired.
+     *
+     * @param bankId
+     * @param userName
+     * @throws OAuthAuthorizationRequiredException
+     */
+    public String userAccessTokenIsValidForPayments(final String bankId, final String userName) {
+        LOG.info("userAccessTokenIsValid: bankId {} userName {}", bankId, userName);
+        AccessToken userAccessToken = getLatestUserAccessToken(userName, bankId, SCOPE_PAYMENTS);
+        if (null == userAccessToken) {
+            throw new EntityNotFoundException("User access token not found for payments");
+        }
+
+        final TokenManager tokenManager = getTokenManager(bankId);
+        if (userAccessToken.isExpired()) {
+            LOG.info("User AccessToken is expired, trying refresh accessToken: [{}] refreshToken: [{}]", userAccessToken.getAccessToken(), userAccessToken.getRefreshToken());
+            final TokenResponse refreshToken = tokenManager.refreshToken(userAccessToken.getRefreshToken());
+
+            if (HttpURLConnection.HTTP_OK == refreshToken.getHttpResponseCode()) {
+                userAccessToken = createAndSaveUserAccessToken(refreshToken, bankId, userName, SCOPE_PAYMENTS);
+            } else {
+                LOG.warn("Refresh token refreshing not succeeded. HTTP[{}] RAWResponse [{}]", refreshToken.getHttpResponseCode(), refreshToken.getRawContent());
+                throw new EntityNotFoundException("User access token not found for payments after refresh");
             }
         }
 
@@ -216,9 +247,9 @@ public class WSO2Controller {
      * @param bankId
      * @return
      */
-    private AccessToken getLatestUserAccessToken(final String userId, final String bankId) {
+    private AccessToken getLatestUserAccessToken(final String userId, final String bankId, final String scope) {
         LOG.info("getLatestUserAccessToken userId {} bankId {}", userId, bankId);
-        final AccessToken accessToken = accessTokenRepository.getLatest(bankId, userId, SCOPE_ACCOUNTS);
+        final AccessToken accessToken = accessTokenRepository.getLatest(bankId, userId, scope);
         LOG.info("AccessToken: {}", accessToken);
         return accessToken;
     }
@@ -327,11 +358,11 @@ public class WSO2Controller {
      * @param userName
      * @return
      */
-    public AccessToken createAndSaveUserAccessToken(final TokenResponse refreshToken, final String bankId, final String userName) {
+    public AccessToken createAndSaveUserAccessToken(final TokenResponse refreshToken, final String bankId, final String userName, final String scope) {
         final AccessToken userAccessToken = new AccessToken();
         userAccessToken.setAccessToken(refreshToken.getAccessToken());
         userAccessToken.setAccessTokenType("user");
-        userAccessToken.setScope(SCOPE_ACCOUNTS);
+        userAccessToken.setScope(scope);
         userAccessToken.setExpires(refreshToken.getJwtExpires());
         userAccessToken.setRefreshToken(refreshToken.getRefreshToken());
         userAccessToken.setBankId(bankId);
@@ -383,7 +414,7 @@ public class WSO2Controller {
         return accessToken.getAccessToken();
     }
 
-    protected ResponseEntity<String> handle(final WSO2Controller.HTTP_METHOD httpMethod, final String bankId, final User user, final String url, final String jsonContent) {
+    protected ResponseEntity<String> handleAccounts(final WSO2Controller.HTTP_METHOD httpMethod, final String bankId, final User user, final String url, final String jsonContent) {
         LOG.info("BankID: {} User {}", bankId, user);
         try {
             final String userAccessToken = userAccessTokenIsValid(bankId, user.getUsername());
@@ -394,6 +425,42 @@ public class WSO2Controller {
             headers.put("Authorization", "Bearer " + userAccessToken);
             headers.put("x-fapi-interaction-id", UUID.randomUUID().toString());
             final URL apiURL = new URL(bankInfo.getAccountsUrl() + url);
+            LOG.info("Call API: {}", apiURL);
+            final HttpResponse httpResponse = doAPICall(httpMethod, apiURL, headers, jsonContent);
+
+            // Sometimes WSO2 respond errors in xml
+            final String content = httpResponse.getContent();
+            checkWSO2Errors(content);
+            final int respondCode = httpResponse.getResponseCode();
+            if (!(200 <= respondCode && 300 > respondCode)) {
+                LOG.error("Respond code {}; respond: [{}]", respondCode, content);
+            }
+            final HttpStatus httpStatus = HttpStatus.resolve(respondCode);
+            return new ResponseEntity<>(content, null == httpStatus ? HttpStatus.BAD_REQUEST : httpStatus);
+        } catch (final OAuthAuthorizationRequiredException oare) {
+            LOG.warn("Something went wrong!", oare);
+
+            final HttpHeaders responseHeaders = new HttpHeaders();
+            responseHeaders.set("x-tpp-consentid", oare.getConsentId());
+            return new ResponseEntity<>("Require authorize", responseHeaders, HttpStatus.PRECONDITION_REQUIRED);
+        } catch (final Throwable e) {
+            // Intended to catch Throwable
+            LOG.error("Something went wrong!", e);
+            return new ResponseEntity<>(e.getLocalizedMessage(), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    protected ResponseEntity<String> handlePayments(final WSO2Controller.HTTP_METHOD httpMethod, final String bankId, final User user, final String url, final String jsonContent) {
+        LOG.info("BankID: {} User {}", bankId, user);
+        try {
+            final String userAccessToken = userAccessTokenIsValidForPayments(bankId, user.getUsername());
+            final BankInfo bankInfo = getTokenManager(bankId).getOauthconfig().getBankInfo();
+
+            // Setup HTTP headers
+            final Map<String, String> headers = new HashMap<>();
+            headers.put("Authorization", "Bearer " + userAccessToken);
+            headers.put("x-fapi-interaction-id", UUID.randomUUID().toString());
+            final URL apiURL = new URL(bankInfo.getPaymentsUrl() + url);
             LOG.info("Call API: {}", apiURL);
             final HttpResponse httpResponse = doAPICall(httpMethod, apiURL, headers, jsonContent);
 

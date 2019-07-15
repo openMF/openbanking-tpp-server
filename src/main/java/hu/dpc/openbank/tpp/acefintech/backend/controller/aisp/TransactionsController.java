@@ -32,7 +32,7 @@ public class TransactionsController extends WSO2Controller {
      */
     @GetMapping(path = "transactions", produces = APPLICATION_JSON)
     public ResponseEntity<String> getTransactions(@RequestHeader(WSO2Controller.X_TPP_BANKID) final String bankId, @AuthenticationPrincipal final User user, @RequestParam(name = "fromBookingDateTime", required = false) final String fromBookingDateTime, @RequestParam(name = "fromBookingDateTime", required = false) final String toBookingDateTime) {
-        return handle(WSO2Controller.HTTP_METHOD.GET, bankId, user, "/transactions" + createParams(fromBookingDateTime, toBookingDateTime), null);
+        return handleAccounts(WSO2Controller.HTTP_METHOD.GET, bankId, user, "/transactions" + createParams(fromBookingDateTime, toBookingDateTime), null);
     }
 
 
@@ -46,7 +46,7 @@ public class TransactionsController extends WSO2Controller {
      */
     @GetMapping(path = "accounts/{AccountId}/transactions", produces = APPLICATION_JSON)
     public ResponseEntity<String> getAccountTransactions(@RequestHeader(WSO2Controller.X_TPP_BANKID) final String bankId, @AuthenticationPrincipal final User user, @PathVariable(ACCOUNT_ID) final String accountId, @RequestParam(name = "fromBookingDateTime", required = false) final String fromBookingDateTime, @RequestParam(name = "fromBookingDateTime", required = false) final String toBookingDateTime) {
-        return handle(WSO2Controller.HTTP_METHOD.GET, bankId, user, "/accounts/" + accountId + "/transactions" + createParams(fromBookingDateTime, toBookingDateTime), null);
+        return handleAccounts(WSO2Controller.HTTP_METHOD.GET, bankId, user, "/accounts/" + accountId + "/transactions" + createParams(fromBookingDateTime, toBookingDateTime), null);
     }
 
     private @NotNull String createParams(final String fromBookingDateTime, final String toBookingDateTime) {

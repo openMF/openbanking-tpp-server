@@ -34,7 +34,7 @@ public class TokenController extends WSO2Controller {
         final TokenResponse accessTokenResponse = tokenManager.getAccessTokenFromCode(code);
         final int responseCode = accessTokenResponse.getHttpResponseCode();
         if (200 <= responseCode && 300 > responseCode) {
-            createAndSaveUserAccessToken(accessTokenResponse, bankId, user.getUsername());
+            createAndSaveUserAccessToken(accessTokenResponse, bankId, user.getUsername(), WSO2Controller.SCOPE_ACCOUNTS);
 
             return new ResponseEntity<>("", HttpStatus.OK);
         }

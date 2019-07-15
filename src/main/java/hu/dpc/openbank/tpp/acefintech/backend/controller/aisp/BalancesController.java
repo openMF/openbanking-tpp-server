@@ -31,7 +31,7 @@ public class BalancesController extends WSO2Controller {
      */
     @GetMapping(path = "balances", produces = APPLICATION_JSON)
     public ResponseEntity<String> getBalances(@RequestHeader(WSO2Controller.X_TPP_BANKID) final String bankId, @AuthenticationPrincipal final User user) {
-        return handle(WSO2Controller.HTTP_METHOD.GET, bankId, user, "/balances", null);
+        return handleAccounts(WSO2Controller.HTTP_METHOD.GET, bankId, user, "/balances", null);
     }
 
     /**
@@ -44,7 +44,7 @@ public class BalancesController extends WSO2Controller {
      */
     @GetMapping(path = "accounts/{AccountId}/balances", produces = APPLICATION_JSON)
     public ResponseEntity<String> getAccountBalance(@RequestHeader(WSO2Controller.X_TPP_BANKID) final String bankId, @AuthenticationPrincipal final User user, @PathVariable(ACCOUNT_ID) final String accountId) {
-        return handle(WSO2Controller.HTTP_METHOD.GET, bankId, user, "/accounts/" + accountId + "/balances", null);
+        return handleAccounts(WSO2Controller.HTTP_METHOD.GET, bankId, user, "/accounts/" + accountId + "/balances", null);
     }
 
 }

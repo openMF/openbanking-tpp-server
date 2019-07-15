@@ -32,7 +32,7 @@ public class AccountAccessConsentsController extends WSO2Controller {
      */
     @GetMapping(path = "/{ConsentId}", produces = APPLICATION_JSON)
     public ResponseEntity<String> getConsent(@RequestHeader(X_TPP_BANKID) final String bankId, @AuthenticationPrincipal final User user, @PathVariable(CONSENT_ID) final String consentId) {
-        return handle(WSO2Controller.HTTP_METHOD.GET, bankId, user, "/account-access-consents/" + consentId, null);
+        return handleAccounts(WSO2Controller.HTTP_METHOD.GET, bankId, user, "/account-access-consents/" + consentId, null);
     }
 
     /**
@@ -45,7 +45,7 @@ public class AccountAccessConsentsController extends WSO2Controller {
      */
     @DeleteMapping(path = "/{ConsentId}", produces = APPLICATION_JSON)
     public ResponseEntity<String> deleteConsent(@RequestHeader(X_TPP_BANKID) final String bankId, @AuthenticationPrincipal final User user, @PathVariable(CONSENT_ID) final String consentId) {
-        return handle(WSO2Controller.HTTP_METHOD.DELETE, bankId, user, "/account-access-consents/" + consentId, null);
+        return handleAccounts(WSO2Controller.HTTP_METHOD.DELETE, bankId, user, "/account-access-consents/" + consentId, null);
     }
 
 }

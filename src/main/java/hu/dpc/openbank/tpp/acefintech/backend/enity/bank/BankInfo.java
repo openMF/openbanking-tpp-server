@@ -56,6 +56,9 @@ public class BankInfo {
     @Column(name = "AUTHORIZE_URL")
     @JsonProperty("AuthorizeUrl")
     private String authorizeUrl;
+    @JsonIgnore
+    @Column(name = "PAYMENTS_URL")
+    private String paymentsUrl;
 
     public String getBankName() {
         return bankName;
@@ -151,5 +154,13 @@ public class BankInfo {
 
     public void setAuthorizeUrl(final String authorizeUrl) {
         this.authorizeUrl = authorizeUrl;
+    }
+
+    public String getPaymentsUrl() {
+        return paymentsUrl;
+    }
+
+    public void setPaymentsUrl(final String paymentsUrl) {
+        this.paymentsUrl = paymentsUrl;
     }
 }
