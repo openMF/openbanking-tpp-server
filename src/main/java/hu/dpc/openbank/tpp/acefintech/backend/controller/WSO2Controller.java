@@ -25,11 +25,13 @@ import hu.dpc.openbanking.oauth2.HttpsTrust;
 import hu.dpc.openbanking.oauth2.OAuthConfig;
 import hu.dpc.openbanking.oauth2.TokenManager;
 import org.jetbrains.annotations.NonNls;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.User;
 
@@ -60,11 +62,12 @@ public class WSO2Controller {
     @NonNls
     public static final String ACCOUNT_ID = "AccountId";
     @NonNls
-    public static final String APPLICATION_JSON = "application/json";
+    public static final String APPLICATION_JSON = MediaType.APPLICATION_JSON_VALUE;
     @NonNls
     public static final String CONSENT_ID = "ConsentId";
     public static final String SCOPE_ACCOUNTS = "accounts";
     public static final String SCOPE_PAYMENTS = "payments";
+    public static final String X_FAPI_INTERACTION_ID = "x-fapi-interaction-id";
     private static final Logger LOG = LoggerFactory.getLogger(WSO2Controller.class);
     private static final HashMap<String, TokenManager> tokenManagerCache = new HashMap<>();
     private static final HashMap<String, AccessToken> clientAccessTokenCache = new HashMap<>();
@@ -91,7 +94,7 @@ public class WSO2Controller {
      * @param jsonContentData
      * @return
      */
-    public static HttpResponse doAPICall(final WSO2Controller.HTTP_METHOD httpMethod, final URL url, final Map<String, String> headerParams, @Nullable final String jsonContentData) {
+    public static @NotNull HttpResponse doAPICall(final WSO2Controller.HTTP_METHOD httpMethod, final URL url, final Map<String, String> headerParams, @Nullable final String jsonContentData) {
         final HttpResponse httpResponse = new HttpResponse();
         for (int trycount = HttpHelper.CONNECTION_REFUSED_TRYCOUNT; 0 < trycount--; ) {
             try {
@@ -106,7 +109,7 @@ public class WSO2Controller {
 
                 conn.setDoOutput(hasContent);
 
-                conn.setRequestProperty("Accept", APPLICATION_JSON);
+                conn.setRequestProperty(HttpHeaders.ACCEPT, APPLICATION_JSON);
                 conn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
                 for (final Map.Entry<String, String> entry : headerParams.entrySet()) {
                     LOG.info("doAPICall-Header: {}: {}", entry.getKey(), entry.getValue());
@@ -115,14 +118,11 @@ public class WSO2Controller {
 
                 if (hasContent) {
                     LOG.info("doAPICall-body: [{}]", jsonContentData);
-                    final OutputStream os = conn.getOutputStream();
-                    final BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, StandardCharsets.UTF_8));
-
-                    writer.write(jsonContentData);
-
-                    writer.flush();
-                    writer.close();
-                    os.close();
+                    try (final OutputStream os = conn.getOutputStream();
+                         final BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, StandardCharsets.UTF_8))) {
+                        writer.write(jsonContentData);
+                        writer.flush();
+                    }
                 }
 
                 final int responseCode = conn.getResponseCode();
@@ -269,9 +269,9 @@ public class WSO2Controller {
                 final String accessToken = getClientAccessTokenForAccounts(bankId, force);
                 final BankInfo bankInfo = getTokenManager(bankId).getOauthconfig().getBankInfo();
                 // Setup HTTP headers
-                final Map<String, String> headers = new HashMap<>();
-                headers.put("Authorization", "Bearer " + accessToken);
-                headers.put("x-fapi-interaction-id", UUID.randomUUID().toString());
+                final HttpHeaders headers = new HttpHeaders();
+                headers.setBearerAuth(accessToken);
+                headers.add(X_FAPI_INTERACTION_ID, UUID.randomUUID().toString());
                 final Consents consents = new Consents();
                 consents.setPermissions(new ArrayList<>(AccountConsentPermissions.PERMISSIONS));
                 LocalDateTime exp = LocalDateTime.now();
@@ -291,7 +291,7 @@ public class WSO2Controller {
                     throw new APICallException("Error creating JSON: " + e.getLocalizedMessage());
                 }
                 // get ConsentID
-                final HttpResponse httpResponse = doAPICall(WSO2Controller.HTTP_METHOD.POST, new URL(bankInfo.getAccountsUrl() + "/account-access-consents"), headers, json);
+                final HttpResponse httpResponse = doAPICall(WSO2Controller.HTTP_METHOD.POST, new URL(bankInfo.getAccountsUrl() + "/account-access-consents"), headers.toSingleValueMap(), json);
 
                 // Sometimes WSO2 respond errors in xml
                 final String content = httpResponse.getContent();
@@ -358,7 +358,7 @@ public class WSO2Controller {
      * @param userName
      * @return
      */
-    public AccessToken createAndSaveUserAccessToken(final TokenResponse refreshToken, final String bankId, final String userName, final String scope) {
+    public @NotNull AccessToken createAndSaveUserAccessToken(final TokenResponse refreshToken, final String bankId, final String userName, final String scope) {
         final AccessToken userAccessToken = new AccessToken();
         userAccessToken.setAccessToken(refreshToken.getAccessToken());
         userAccessToken.setAccessTokenType("user");
@@ -382,19 +382,19 @@ public class WSO2Controller {
         return getClientAccessToken(bankId, force, SCOPE_ACCOUNTS);
     }
 
-    protected ResponseEntity<String> handleAccounts(final WSO2Controller.HTTP_METHOD httpMethod, final String bankId, final User user, final String url, final String jsonContent) {
+    protected @NotNull ResponseEntity<String> handleAccounts(final WSO2Controller.HTTP_METHOD httpMethod, final String bankId, final User user, final String url, @Nullable final String jsonContent) {
         LOG.info("BankID: {} User {}", bankId, user);
         try {
             final String userAccessToken = userAccessTokenIsValid(bankId, user.getUsername());
             final BankInfo bankInfo = getTokenManager(bankId).getOauthconfig().getBankInfo();
 
             // Setup HTTP headers
-            final Map<String, String> headers = new HashMap<>();
-            headers.put("Authorization", "Bearer " + userAccessToken);
-            headers.put("x-fapi-interaction-id", UUID.randomUUID().toString());
+            final HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth(userAccessToken);
+            headers.add(X_FAPI_INTERACTION_ID, UUID.randomUUID().toString());
             final URL apiURL = new URL(bankInfo.getAccountsUrl() + url);
             LOG.info("Call API: {}", apiURL);
-            final HttpResponse httpResponse = doAPICall(httpMethod, apiURL, headers, jsonContent);
+            final HttpResponse httpResponse = doAPICall(httpMethod, apiURL, headers.toSingleValueMap(), jsonContent);
 
             // Sometimes WSO2 respond errors in xml
             final String content = httpResponse.getContent();
@@ -402,6 +402,13 @@ public class WSO2Controller {
             final int respondCode = httpResponse.getResponseCode();
             if (!(200 <= respondCode && 300 > respondCode)) {
                 LOG.error("Respond code {}; respond: [{}]", respondCode, content);
+                // TODO Handle correctly if error will come processable
+                // 500:java.lang.UnsupportedOperationException: User.....
+                // 401:[{"fault":{"code":900901,"message":"Invalid Credentials","description":"Access failure for API: /open-banking/v3.1/aisp/v3.1.2, version: v3.1.2 status: (900901) - Invalid Credentials. Make sure you have given the correct access token"}}]
+                if ((HttpStatus.UNAUTHORIZED.value() == respondCode) || (HttpStatus.INTERNAL_SERVER_ERROR.value() == respondCode && content.startsWith("java.lang.UnsupportedOperationException: User"))) {
+                    final String consentId = getConsentId(bankId);
+                    throw new OAuthAuthorizationRequiredException(consentId);
+                }
             }
             final HttpStatus httpStatus = HttpStatus.resolve(respondCode);
             return new ResponseEntity<>(content, null == httpStatus ? HttpStatus.BAD_REQUEST : httpStatus);
@@ -418,19 +425,29 @@ public class WSO2Controller {
         }
     }
 
-    protected ResponseEntity<String> handlePayments(final WSO2Controller.HTTP_METHOD httpMethod, final String bankId, final User user, final String url, final String jsonContent) {
+    protected @NotNull ResponseEntity<String> handlePayments(final WSO2Controller.HTTP_METHOD httpMethod, final String bankId, final User user, final String url, @Nullable final String jsonContent, final WSO2Controller.ACCESS_TOKEN_TYPE accessTokenType) {
         LOG.info("BankID: {} User {}", bankId, user);
         try {
-            final String userAccessToken = userAccessTokenIsValidForPayments(bankId, user.getUsername());
+            final String accessToken;
+            switch (accessTokenType) {
+                case CLIENT:
+                    accessToken = getClientAccessTokenForPayments(bankId, true);
+                    break;
+                case USER:
+                    accessToken = userAccessTokenIsValidForPayments(bankId, user.getUsername());
+                    break;
+                default:
+                    throw new IllegalStateException("Unexpected value: " + accessTokenType);
+            }
             final BankInfo bankInfo = getTokenManager(bankId).getOauthconfig().getBankInfo();
 
             // Setup HTTP headers
-            final Map<String, String> headers = new HashMap<>();
-            headers.put("Authorization", "Bearer " + userAccessToken);
-            headers.put("x-fapi-interaction-id", UUID.randomUUID().toString());
+            final HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth(accessToken);
+            headers.add(X_FAPI_INTERACTION_ID, UUID.randomUUID().toString());
             final URL apiURL = new URL(bankInfo.getPaymentsUrl() + url);
-            LOG.info("Call API: {}", apiURL);
-            final HttpResponse httpResponse = doAPICall(httpMethod, apiURL, headers, jsonContent);
+            LOG.info("Call API with {} accessToken: {}", accessTokenType.name(), apiURL);
+            final HttpResponse httpResponse = doAPICall(httpMethod, apiURL, headers.toSingleValueMap(), jsonContent);
 
             // Sometimes WSO2 respond errors in xml
             final String content = httpResponse.getContent();
@@ -512,4 +529,14 @@ public class WSO2Controller {
         GET, POST, PUT, DELETE
     }
 
+    public enum ACCESS_TOKEN_TYPE {
+        /**
+         * Client aka TPP.
+         */
+        CLIENT,
+        /**
+         * End user, logged in bank user who accepted consent.
+         */
+        USER
+    }
 }

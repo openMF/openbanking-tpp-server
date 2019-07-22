@@ -11,8 +11,6 @@ package hu.dpc.openbank.tpp.acefintech.backend.controller.aisp;
 
 import hu.dpc.openbank.tpp.acefintech.backend.controller.WSO2Controller;
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.User;
@@ -21,8 +19,6 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping(path = "/aisp/v1/")
 public class AccountsController extends WSO2Controller {
-    private static final Logger LOG = LoggerFactory.getLogger(AccountsController.class);
-
     /**
      * GetAccounts
      *

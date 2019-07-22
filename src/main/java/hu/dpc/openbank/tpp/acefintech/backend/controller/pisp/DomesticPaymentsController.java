@@ -67,7 +67,7 @@ public class DomesticPaymentsController extends WSO2Controller {
 
         final MultiValueMap<String, String> headers = new HttpHeaders();
         headers.add("x-tpp-consentid", consentId);
-        return new ResponseEntity<String>("", headers, HttpStatus.OK);
+        return new ResponseEntity<>("", headers, HttpStatus.OK);
     }
 
 
@@ -86,10 +86,10 @@ public class DomesticPaymentsController extends WSO2Controller {
                 throw new EntityNotFoundException();
             }
         } catch (final EntityNotFoundException nfe) {
-            return new ResponseEntity<String>("{\"error\":\"consentId not found\"}", HttpStatus.PRECONDITION_FAILED);
+            return new ResponseEntity<>("{\"error\":\"consentId not found\"}", HttpStatus.PRECONDITION_FAILED);
         }
 
-        final ResponseEntity<String> result = handlePayments(WSO2Controller.HTTP_METHOD.POST, bankId, user, "/domestic-payments", paymentConsent.getConsentResponse());
+        final ResponseEntity<String> result = handlePayments(WSO2Controller.HTTP_METHOD.POST, bankId, user, "/domestic-payments", paymentConsent.getConsentResponse(), WSO2Controller.ACCESS_TOKEN_TYPE.USER);
 
         if (result.getStatusCode() == HttpStatus.CREATED) {
             final ObjectMapper mapper = new ObjectMapper();
@@ -99,7 +99,7 @@ public class DomesticPaymentsController extends WSO2Controller {
                 paymentConsent.setPaymentId(domesticResult.getData().getDomesticPaymentId());
                 paymentConsentRepository.save(paymentConsent);
             } catch (final IOException e) {
-                return new ResponseEntity<String>("{\"error\":\"domestic-payments execution problem\"}", HttpStatus.PRECONDITION_FAILED);
+                return new ResponseEntity<>("{\"error\":\"domestic-payments execution problem\"}", HttpStatus.PRECONDITION_FAILED);
             }
         }
 
@@ -114,7 +114,7 @@ public class DomesticPaymentsController extends WSO2Controller {
      */
     @GetMapping(path = "payment/{DomesticPaymentId}", produces = APPLICATION_JSON)
     public ResponseEntity<String> getPaymentDetails(@RequestHeader(WSO2Controller.X_TPP_BANKID) final String bankId, @AuthenticationPrincipal final User user, @PathVariable("DomesticPaymentId") final String domesticPaymentId) {
-        return handlePayments(WSO2Controller.HTTP_METHOD.GET, bankId, user, "/domestic-payments/" + domesticPaymentId, null);
+        return handlePayments(WSO2Controller.HTTP_METHOD.GET, bankId, user, "/domestic-payments/" + domesticPaymentId, null, WSO2Controller.ACCESS_TOKEN_TYPE.CLIENT);
     }
 
     /**
@@ -146,8 +146,7 @@ public class DomesticPaymentsController extends WSO2Controller {
                 if (200 <= respondCode && 300 > respondCode) {
                     LOG.info("Respond code {}; respond: [{}]", respondCode, content);
                     final ObjectMapper mapper = new ObjectMapper();
-                    final OBWriteDomesticConsentResponse3 response = mapper.readValue(content, OBWriteDomesticConsentResponse3.class);
-                    return response;
+                    return mapper.readValue(content, OBWriteDomesticConsentResponse3.class);
                 }
                 LOG.error("Respond code {}; respond: [{}]", respondCode, content);
                 force = true;
