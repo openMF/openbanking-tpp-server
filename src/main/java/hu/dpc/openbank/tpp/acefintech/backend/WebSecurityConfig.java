@@ -32,9 +32,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         http.httpBasic().and()
                 .authorizeRequests().anyRequest().authenticated()
                 .and().formLogin().loginPage("/netbank/login")
-                .and().logout().permitAll();
-//                .and().csrf().disable();
-//                .and().csrf().csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse());
+                .and().logout().permitAll()
+                .and().csrf().disable();
     }
 
     @Autowired

@@ -266,7 +266,7 @@ public class WSO2Controller {
 
         try {
             for (int ii = tryCount; 0 < ii--; ) {
-                final String accessToken = getClientAccessToken(bankId, force);
+                final String accessToken = getClientAccessTokenForAccounts(bankId, force);
                 final BankInfo bankInfo = getTokenManager(bankId).getOauthconfig().getBankInfo();
                 // Setup HTTP headers
                 final Map<String, String> headers = new HashMap<>();
@@ -378,40 +378,8 @@ public class WSO2Controller {
      * @param bankId
      * @return
      */
-    protected String getClientAccessToken(final String bankId, final boolean force) {
-        LOG.info("getClientAccessToken: bankId: {} force: {}", bankId, force);
-        AccessToken accessToken = clientAccessTokenCache.get(bankId);
-        LOG.info("Access token {} found in cache for bank {}", (null == accessToken ? "not" : ""), bankId);
-        if (null != accessToken) {
-            LOG.info("Cached Access token {} is expired {} expires {} current {}", accessToken.getAccessToken(), accessToken.isExpired(), accessToken.getExpires(), System.currentTimeMillis());
-        }
-
-        if (force || null == accessToken || accessToken.isExpired()) {
-            final TokenManager tokenManager = getTokenManager(bankId);
-            final TokenResponse tokenResponse = tokenManager.getAccessTokenWithClientCredential(new String[]{SCOPE_ACCOUNTS});
-            final int respondeCode = tokenResponse.getHttpResponseCode();
-            if (200 <= respondeCode && 300 > respondeCode) {
-
-                final String accessTokenStr = tokenResponse.getAccessToken();
-                LOG.debug("Client AccessToken: {}", accessTokenStr);
-
-                // Save accessToken for later usage
-                accessToken = new AccessToken();
-                accessToken.setAccessToken(accessTokenStr);
-                accessToken.setAccessTokenType("client");
-                accessToken.setScope(SCOPE_ACCOUNTS);
-                accessToken.setExpires(tokenResponse.getExpiresIn());
-                accessToken.setBankId(bankId);
-
-                LOG.info("New Access token {} is expired {} expires {} current {}", accessToken.getAccessToken(), accessToken.isExpired(), accessToken.getExpires(), System.currentTimeMillis());
-
-                clientAccessTokenCache.put(bankId, accessToken);
-            } else {
-                throw new APICallException(tokenResponse.getRawContent());
-            }
-        }
-
-        return accessToken.getAccessToken();
+    protected String getClientAccessTokenForAccounts(final String bankId, final boolean force) {
+        return getClientAccessToken(bankId, force, SCOPE_ACCOUNTS);
     }
 
     protected ResponseEntity<String> handleAccounts(final WSO2Controller.HTTP_METHOD httpMethod, final String bankId, final User user, final String url, final String jsonContent) {
@@ -484,6 +452,59 @@ public class WSO2Controller {
             LOG.error("Something went wrong!", e);
             return new ResponseEntity<>(e.getLocalizedMessage(), HttpStatus.BAD_REQUEST);
         }
+    }
+
+    /**
+     * Get or create client AccessToken
+     *
+     * @param bankId
+     * @return
+     */
+    protected String getClientAccessTokenForPayments(final String bankId, final boolean force) {
+        return getClientAccessToken(bankId, force, SCOPE_PAYMENTS);
+    }
+
+    /**
+     * Get or create client AccessToken
+     *
+     * @param bankId
+     * @return
+     */
+    protected String getClientAccessToken(final String bankId, final boolean force, final String scope) {
+        final String key = bankId + "|" + scope;
+        LOG.info("getClientAccessToken: bankId: {} force: {} key: {}", bankId, force, key);
+        AccessToken accessToken = clientAccessTokenCache.get(key);
+        LOG.info("Access token {} found in cache for bank {} by key {}", (null == accessToken ? "not" : ""), bankId, key);
+        if (null != accessToken) {
+            LOG.info("Cached Access ({}) token {} is expired {} expires {} current {}", key, accessToken.getAccessToken(), accessToken.isExpired(), accessToken.getExpires(), System.currentTimeMillis());
+        }
+
+        if (force || null == accessToken || accessToken.isExpired()) {
+            final TokenManager tokenManager = getTokenManager(bankId);
+            final TokenResponse tokenResponse = tokenManager.getAccessTokenWithClientCredential(new String[]{scope});
+            final int respondeCode = tokenResponse.getHttpResponseCode();
+            if (200 <= respondeCode && 300 > respondeCode) {
+
+                final String accessTokenStr = tokenResponse.getAccessToken();
+                LOG.debug("Client AccessToken: {}", accessTokenStr);
+
+                // Save accessToken for later usage
+                accessToken = new AccessToken();
+                accessToken.setAccessToken(accessTokenStr);
+                accessToken.setAccessTokenType("client");
+                accessToken.setScope(scope);
+                accessToken.setExpires(tokenResponse.getExpiresIn());
+                accessToken.setBankId(bankId);
+
+                LOG.info("New Access ({}) token {} is expired {} expires {} current {}", key, accessToken.getAccessToken(), accessToken.isExpired(), accessToken.getExpires(), System.currentTimeMillis());
+
+                clientAccessTokenCache.put(key, accessToken);
+            } else {
+                throw new APICallException(tokenResponse.getRawContent());
+            }
+        }
+
+        return accessToken.getAccessToken();
     }
 
 

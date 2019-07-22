@@ -10,6 +10,7 @@ package hu.dpc.openbank.tpp.acefintech.backend.controller.aisp;
 
 
 import hu.dpc.openbank.tpp.acefintech.backend.controller.WSO2Controller;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -30,7 +31,7 @@ public class AccountsController extends WSO2Controller {
      * @return
      */
     @GetMapping(path = "accounts", produces = APPLICATION_JSON)
-    public ResponseEntity<String> getAccounts(@RequestHeader(WSO2Controller.X_TPP_BANKID) final String bankId, @AuthenticationPrincipal final User user) {
+    public ResponseEntity<String> getAccounts(@RequestHeader(WSO2Controller.X_TPP_BANKID) final @NotNull String bankId, @AuthenticationPrincipal final @NotNull User user) {
         return handleAccounts(WSO2Controller.HTTP_METHOD.GET, bankId, user, "/accounts", null);
     }
 
@@ -44,7 +45,7 @@ public class AccountsController extends WSO2Controller {
      * @return
      */
     @GetMapping(path = "accounts/{AccountId}", produces = APPLICATION_JSON)
-    public ResponseEntity<String> getAccount(@RequestHeader(WSO2Controller.X_TPP_BANKID) final String bankId, @AuthenticationPrincipal final User user, @PathVariable(ACCOUNT_ID) final String accountId) {
+    public ResponseEntity<String> getAccount(@RequestHeader(WSO2Controller.X_TPP_BANKID) final @NotNull String bankId, @AuthenticationPrincipal final @NotNull User user, @PathVariable(ACCOUNT_ID) final String accountId) {
         return handleAccounts(WSO2Controller.HTTP_METHOD.GET, bankId, user, "/accounts/" + accountId, null);
     }
 

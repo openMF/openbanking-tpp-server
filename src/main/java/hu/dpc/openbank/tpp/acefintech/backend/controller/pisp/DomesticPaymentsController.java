@@ -53,7 +53,6 @@ public class DomesticPaymentsController extends WSO2Controller {
      * @param user
      * @return
      */
-//    @PostMapping(path = "preparePayment")
     @PostMapping(path = "preparePayment")
     public ResponseEntity<String> preparePayment(@RequestHeader(WSO2Controller.X_TPP_BANKID) final String bankId, @AuthenticationPrincipal final User user, @RequestBody final String body) {
         LOG.info("preparePayment called bankid={} userName={}", bankId, user.getUsername());
@@ -130,7 +129,7 @@ public class DomesticPaymentsController extends WSO2Controller {
 
         try {
             for (int ii = tryCount; 0 < ii--; ) {
-                final String accessToken = getClientAccessToken(bankId, force);
+                final String accessToken = getClientAccessTokenForPayments(bankId, force);
                 final BankInfo bankInfo = getTokenManager(bankId).getOauthconfig().getBankInfo();
                 // Setup HTTP headers
                 final Map<String, String> headers = new HashMap<>();
