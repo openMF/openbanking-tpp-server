@@ -62,7 +62,7 @@ public class DomesticPaymentsController extends WSO2Controller {
         final PaymentConsent paymentConsent = new PaymentConsent();
         paymentConsent.setBankId(bankId);
         paymentConsent.setConsentId(consentId);
-        paymentConsent.setConsentResponse(body);
+        paymentConsent.setConsentResponse(response.getRawContent());
         paymentConsentRepository.save(paymentConsent);
 
         final MultiValueMap<String, String> headers = new HttpHeaders();
@@ -89,10 +89,22 @@ public class DomesticPaymentsController extends WSO2Controller {
             return new ResponseEntity<>("{\"error\":\"consentId not found\"}", HttpStatus.PRECONDITION_FAILED);
         }
 
-        final ResponseEntity<String> result = handlePayments(WSO2Controller.HTTP_METHOD.POST, bankId, user, "/domestic-payments", paymentConsent.getConsentResponse(), WSO2Controller.ACCESS_TOKEN_TYPE.USER);
+
+        final ObjectMapper mapper = new ObjectMapper();
+        String modifiedResponse = null;
+        try {
+            final OBWriteDomesticConsentResponse3 prevResponse = mapper.readValue(paymentConsent.getConsentResponse(), OBWriteDomesticConsentResponse3.class);
+            prevResponse.getData().setStatus(null);
+            prevResponse.getData().setCreationDateTime(null);
+            prevResponse.getData().setStatusUpdateDateTime(null);
+            modifiedResponse = mapper.writeValueAsString(prevResponse);
+        } catch (final IOException e) {
+            e.printStackTrace();
+        }
+
+        final ResponseEntity<String> result = handlePayments(WSO2Controller.HTTP_METHOD.POST, bankId, user, "/domestic-payments", modifiedResponse, WSO2Controller.ACCESS_TOKEN_TYPE.USER);
 
         if (result.getStatusCode() == HttpStatus.CREATED) {
-            final ObjectMapper mapper = new ObjectMapper();
             OBWriteDomesticResponse3 domesticResult = null;
             try {
                 domesticResult = mapper.readValue(result.getBody(), OBWriteDomesticResponse3.class);
@@ -146,7 +158,9 @@ public class DomesticPaymentsController extends WSO2Controller {
                 if (200 <= respondCode && 300 > respondCode) {
                     LOG.info("Respond code {}; respond: [{}]", respondCode, content);
                     final ObjectMapper mapper = new ObjectMapper();
-                    return mapper.readValue(content, OBWriteDomesticConsentResponse3.class);
+                    final OBWriteDomesticConsentResponse3 result = mapper.readValue(content, OBWriteDomesticConsentResponse3.class);
+                    result.setRawContent(content);
+                    return result;
                 }
                 LOG.error("Respond code {}; respond: [{}]", respondCode, content);
                 force = true;

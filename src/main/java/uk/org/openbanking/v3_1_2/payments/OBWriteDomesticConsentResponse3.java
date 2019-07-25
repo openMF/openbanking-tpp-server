@@ -21,6 +21,7 @@
 
 package uk.org.openbanking.v3_1_2.payments;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -47,6 +48,9 @@ public class OBWriteDomesticConsentResponse3 {
 
     @JsonProperty("Meta")
     private Meta meta = null;
+
+    @JsonIgnore
+    private String rawContent;
 
     public OBWriteDomesticConsentResponse3 data(OBWriteDomesticConsentResponse3Data data) {
         this.data = data;
@@ -172,6 +176,14 @@ public class OBWriteDomesticConsentResponse3 {
             return "null";
         }
         return o.toString().replace("\n", "\n    ");
+    }
+
+    public String getRawContent() {
+        return rawContent;
+    }
+
+    public void setRawContent(String rawContent) {
+        this.rawContent = rawContent;
     }
 }
 

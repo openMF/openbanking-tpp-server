@@ -27,12 +27,29 @@ public class TokenController extends WSO2Controller {
 
 
     @GetMapping(path = "/code/{Code}", produces = APPLICATION_JSON)
-    public ResponseEntity<String> getTokenCode(@RequestHeader(WSO2Controller.X_TPP_BANKID) final String bankId, @AuthenticationPrincipal final User user, @PathVariable("Code") final String code) {
+    public ResponseEntity<String> getTokenCodeForAccounts(@RequestHeader(WSO2Controller.X_TPP_BANKID) final String bankId, @AuthenticationPrincipal final User user, @PathVariable("Code") final String code) {
+        LOG.info("GET /token/v1/code/{}    bankId={}", code, bankId);
+        return getToken(bankId, user, code, SCOPE_ACCOUNTS);
+    }
+
+    @GetMapping(path = "/code/{Code}/accounts", produces = APPLICATION_JSON)
+    public ResponseEntity<String> getTokenCodeForAccounts2(@RequestHeader(WSO2Controller.X_TPP_BANKID) final String bankId, @AuthenticationPrincipal final User user, @PathVariable("Code") final String code) {
+        LOG.info("GET /accounts/token/v1/code/{}    bankId={}", code, bankId);
+        return getToken(bankId, user, code, SCOPE_ACCOUNTS);
+    }
+
+    @GetMapping(path = "/code/{Code}/payments", produces = APPLICATION_JSON)
+    public ResponseEntity<String> getTokenCodeForPayments(@RequestHeader(WSO2Controller.X_TPP_BANKID) final String bankId, @AuthenticationPrincipal final User user, @PathVariable("Code") final String code) {
+        LOG.info("GET /payments/token/v1/code/{}    bankId={}", code, bankId);
+        return getToken(bankId, user, code, SCOPE_PAYMENTS);
+    }
+
+    public ResponseEntity<String> getToken(final String bankId, final User user, final String code, final String scope) {
         final TokenManager tokenManager = getTokenManager(bankId);
         final TokenResponse accessTokenResponse = tokenManager.getAccessTokenFromCode(code);
         final int responseCode = accessTokenResponse.getHttpResponseCode();
         if (200 <= responseCode && 300 > responseCode) {
-            createAndSaveUserAccessToken(accessTokenResponse, bankId, user.getUsername(), WSO2Controller.SCOPE_ACCOUNTS);
+            createAndSaveUserAccessToken(accessTokenResponse, bankId, user.getUsername(), scope);
             return new ResponseEntity<>("", HttpStatus.OK);
         }
         LOG.warn("Code exchange not succeeded. HTTP[{}] RAWResponse [{}]", responseCode, accessTokenResponse.getRawContent());
@@ -40,4 +57,5 @@ public class TokenController extends WSO2Controller {
         LOG.info("No user AccessToken exists. OAuth authorization required! ConsentID: [{}]", consentId);
         throw new OAuthAuthorizationRequiredException(consentId);
     }
+
 }

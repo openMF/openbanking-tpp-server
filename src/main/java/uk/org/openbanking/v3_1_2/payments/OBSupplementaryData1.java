@@ -23,7 +23,9 @@ package uk.org.openbanking.v3_1_2.payments;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModel;
+import uk.org.openbanking.v3_1_2.payments.ext.InteropData;
 
 import java.util.Objects;
 
@@ -35,6 +37,9 @@ import java.util.Objects;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class OBSupplementaryData1 {
+
+    @JsonProperty("interopData")
+    private InteropData interopData;
 
     @Override
     public int hashCode() {
@@ -70,6 +75,14 @@ public class OBSupplementaryData1 {
             return "null";
         }
         return o.toString().replace("\n", "\n    ");
+    }
+
+    public InteropData getInteropData() {
+        return interopData;
+    }
+
+    public void setInteropData(InteropData interopData) {
+        this.interopData = interopData;
     }
 }
 
