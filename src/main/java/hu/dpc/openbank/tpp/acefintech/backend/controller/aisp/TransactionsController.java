@@ -13,7 +13,6 @@ import hu.dpc.openbank.tpp.acefintech.backend.controller.WSO2Controller;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.User;
@@ -33,7 +32,7 @@ public class TransactionsController extends WSO2Controller {
      * @param user
      * @return
      */
-    @GetMapping(path = "/aisp/v1/transactions", produces = APPLICATION_JSON, consumes = MediaType.TEXT_PLAIN_VALUE)
+    @GetMapping(path = "/aisp/v1/transactions", produces = APPLICATION_JSON)
     public ResponseEntity<String> getTransactions(@RequestHeader(WSO2Controller.X_TPP_BANKID) final String bankId,
                                                   @AuthenticationPrincipal final User user,
                                                   @RequestParam(value = "fromBookingDateTime", required = false) final String fromBookingDateTime,
@@ -52,7 +51,7 @@ public class TransactionsController extends WSO2Controller {
      * @param accountId
      * @return
      */
-    @GetMapping(path = "/aisp/v1/accounts/{AccountId}/transactions", produces = APPLICATION_JSON, consumes = MediaType.TEXT_PLAIN_VALUE)
+    @GetMapping(path = "/aisp/v1/accounts/{AccountId}/transactions", produces = APPLICATION_JSON)
     public ResponseEntity<String> getAccountTransactions(
             @RequestHeader(WSO2Controller.X_TPP_BANKID) final String bankId, @AuthenticationPrincipal final User user,
             @PathVariable(ACCOUNT_ID) final String accountId,
