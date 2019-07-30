@@ -11,14 +11,21 @@ package hu.dpc.openbank.tpp.acefintech.backend.controller.aisp;
 
 import hu.dpc.openbank.tpp.acefintech.backend.controller.WSO2Controller;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
+
 @RestController
-@RequestMapping(path = "/aisp/v1/")
+//@RequestMapping(path = "/aisp/v1/")
 public class TransactionsController extends WSO2Controller {
+    private static final Logger LOG = LoggerFactory.getLogger(TransactionsController.class);
+
     /**
      * Get transactions
      *
@@ -26,8 +33,13 @@ public class TransactionsController extends WSO2Controller {
      * @param user
      * @return
      */
-    @GetMapping(path = "transactions", produces = APPLICATION_JSON)
-    public ResponseEntity<String> getTransactions(@RequestHeader(WSO2Controller.X_TPP_BANKID) final String bankId, @AuthenticationPrincipal final User user, @RequestParam(name = "fromBookingDateTime", required = false) final String fromBookingDateTime, @RequestParam(name = "fromBookingDateTime", required = false) final String toBookingDateTime) {
+    @GetMapping(path = "/aisp/v1/transactions", produces = APPLICATION_JSON, consumes = MediaType.TEXT_PLAIN_VALUE)
+    public ResponseEntity<String> getTransactions(@RequestHeader(WSO2Controller.X_TPP_BANKID) final String bankId,
+                                                  @AuthenticationPrincipal final User user,
+                                                  @RequestParam(value = "fromBookingDateTime", required = false) final String fromBookingDateTime,
+                                                  @RequestParam(value = "toBookingDateTime", required = false) final String toBookingDateTime,
+                                                  final HttpServletRequest request) {
+        LOG.info("Called via Controller/RequestMapping /aisp/v1/transactions?fromBookingDateTime={}&toBookingDateTime={}", fromBookingDateTime, toBookingDateTime);
         return handleAccounts(WSO2Controller.HTTP_METHOD.GET, bankId, user, "/transactions" + createParams(fromBookingDateTime, toBookingDateTime), null);
     }
 
@@ -40,8 +52,13 @@ public class TransactionsController extends WSO2Controller {
      * @param accountId
      * @return
      */
-    @GetMapping(path = "accounts/{AccountId}/transactions", produces = APPLICATION_JSON)
-    public ResponseEntity<String> getAccountTransactions(@RequestHeader(WSO2Controller.X_TPP_BANKID) final String bankId, @AuthenticationPrincipal final User user, @PathVariable(ACCOUNT_ID) final String accountId, @RequestParam(name = "fromBookingDateTime", required = false) final String fromBookingDateTime, @RequestParam(name = "fromBookingDateTime", required = false) final String toBookingDateTime) {
+    @GetMapping(path = "/aisp/v1/accounts/{AccountId}/transactions", produces = APPLICATION_JSON, consumes = MediaType.TEXT_PLAIN_VALUE)
+    public ResponseEntity<String> getAccountTransactions(
+            @RequestHeader(WSO2Controller.X_TPP_BANKID) final String bankId, @AuthenticationPrincipal final User user,
+            @PathVariable(ACCOUNT_ID) final String accountId,
+            @RequestParam(name = "fromBookingDateTime", required = false) final String fromBookingDateTime,
+            @RequestParam(name = "toBookingDateTime", required = false) final String toBookingDateTime) {
+        LOG.info("Called /aisp/v1/accounts/{AccountId}/transactions?fromBookingDateTime={}&fromBookingDateTime={}", fromBookingDateTime, fromBookingDateTime);
         return handleAccounts(WSO2Controller.HTTP_METHOD.GET, bankId, user, "/accounts/" + accountId + "/transactions" + createParams(fromBookingDateTime, toBookingDateTime), null);
     }
 
