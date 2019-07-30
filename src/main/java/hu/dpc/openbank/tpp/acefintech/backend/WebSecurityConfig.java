@@ -11,16 +11,21 @@ package hu.dpc.openbank.tpp.acefintech.backend;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import javax.sql.DataSource;
 
 @Configuration
 @EnableWebSecurity
-public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
+@EnableWebMvc
+public class WebSecurityConfig extends WebSecurityConfigurerAdapter implements WebMvcConfigurer {
     private final DataSource dataSource;
 
     public WebSecurityConfig(final DataSource dataSource) {
@@ -29,18 +34,23 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(final @NotNull HttpSecurity http) throws Exception {
-        http.httpBasic().and()
-                .authorizeRequests().anyRequest().authenticated()
-                .and().formLogin().loginPage("/netbank/login")
-                .and().logout().permitAll()
-                .and().csrf().disable();
+        http //
+             .csrf().disable() // enable it for support localhost develop
+             .httpBasic() //
+             .and().authorizeRequests() //
+             .antMatchers(HttpMethod.OPTIONS, "/**").permitAll() // enable it for support localhost develop
+             .anyRequest().authenticated() //
+             .and().formLogin().loginPage("/netbank/login") //
+             .and().logout().permitAll();
     }
 
     @Autowired
-    public void configureGlobal(final @NotNull AuthenticationManagerBuilder auth)
-            throws Exception {
-        auth.jdbcAuthentication()
-                .dataSource(dataSource);
+    public void configureGlobal(final @NotNull AuthenticationManagerBuilder auth) throws Exception {
+        auth.jdbcAuthentication().dataSource(dataSource);
     }
 
+    @Override
+    public void addCorsMappings(final CorsRegistry registry) {
+        registry.addMapping("/**");
+    }
 }
