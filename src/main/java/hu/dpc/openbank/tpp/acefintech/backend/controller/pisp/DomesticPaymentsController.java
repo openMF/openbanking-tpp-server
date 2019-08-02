@@ -22,8 +22,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.User;
@@ -41,7 +41,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping(path = "/pisp/v1/", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+@RequestMapping(path = "/pisp/v1/")
 public class DomesticPaymentsController extends WSO2Controller {
     private static final Logger LOG = LoggerFactory.getLogger(DomesticPaymentsController.class);
 
@@ -54,10 +54,12 @@ public class DomesticPaymentsController extends WSO2Controller {
      * @return
      */
     @PostMapping(path = "preparePayment")
-    public ResponseEntity<String> preparePayment(@RequestHeader(WSO2Controller.X_TPP_BANKID) final String bankId, @AuthenticationPrincipal final User user, @RequestBody final String body) {
+    public ResponseEntity<String> preparePayment(@RequestHeader(WSO2Controller.X_TPP_BANKID) final String bankId,
+                                                 @AuthenticationPrincipal final User user,
+                                                 @RequestBody final String body) {
         LOG.info("preparePayment called bankid={} userName={}", bankId, user.getUsername());
-        final OBWriteDomesticConsentResponse3 response = getConsentId(bankId, body);
-        final String consentId = response.getData().getConsentId();
+        final OBWriteDomesticConsentResponse3 response  = getConsentId(bankId, body);
+        final String                          consentId = response.getData().getConsentId();
 
         final PaymentConsent paymentConsent = new PaymentConsent();
         paymentConsent.setBankId(bankId);
@@ -77,7 +79,9 @@ public class DomesticPaymentsController extends WSO2Controller {
      * @return
      */
     @PostMapping(path = "executePayment/{ConsentId}", produces = APPLICATION_JSON)
-    public ResponseEntity<String> executePayment(@RequestHeader(WSO2Controller.X_TPP_BANKID) final String bankId, @AuthenticationPrincipal final User user, @PathVariable(CONSENT_ID) final String consentId) {
+    public ResponseEntity<String> executePayment(@RequestHeader(WSO2Controller.X_TPP_BANKID) final String bankId,
+                                                 @AuthenticationPrincipal final User user,
+                                                 @PathVariable(CONSENT_ID) final String consentId) {
         LOG.info("executePayment called bankid={} consentId={} userName={}", bankId, consentId, user.getUsername());
         final PaymentConsent paymentConsent;
         try {
@@ -90,10 +94,10 @@ public class DomesticPaymentsController extends WSO2Controller {
         }
 
 
-        final ObjectMapper mapper = new ObjectMapper();
-        String modifiedResponse = null;
+        final ObjectMapper mapper = new ObjectMapper(); String modifiedResponse = null;
         try {
-            final OBWriteDomesticConsentResponse3 prevResponse = mapper.readValue(paymentConsent.getConsentResponse(), OBWriteDomesticConsentResponse3.class);
+            final OBWriteDomesticConsentResponse3 prevResponse = mapper.readValue(paymentConsent
+                                                                                          .getConsentResponse(), OBWriteDomesticConsentResponse3.class);
             prevResponse.getData().setStatus(null);
             prevResponse.getData().setCreationDateTime(null);
             prevResponse.getData().setStatusUpdateDateTime(null);
@@ -102,7 +106,7 @@ public class DomesticPaymentsController extends WSO2Controller {
             e.printStackTrace();
         }
 
-        final ResponseEntity<String> result = handlePayments(WSO2Controller.HTTP_METHOD.POST, bankId, user, "/domestic-payments", modifiedResponse, WSO2Controller.ACCESS_TOKEN_TYPE.USER);
+        final ResponseEntity<String> result = handlePayments(HttpMethod.POST, bankId, user, "/domestic-payments", modifiedResponse, WSO2Controller.ACCESS_TOKEN_TYPE.USER);
 
         if (result.getStatusCode() == HttpStatus.CREATED) {
             OBWriteDomesticResponse3 domesticResult = null;
@@ -125,8 +129,10 @@ public class DomesticPaymentsController extends WSO2Controller {
      * @return
      */
     @GetMapping(path = "payment/{DomesticPaymentId}", produces = APPLICATION_JSON)
-    public ResponseEntity<String> getPaymentDetails(@RequestHeader(WSO2Controller.X_TPP_BANKID) final String bankId, @AuthenticationPrincipal final User user, @PathVariable("DomesticPaymentId") final String domesticPaymentId) {
-        return handlePayments(WSO2Controller.HTTP_METHOD.GET, bankId, user, "/domestic-payments/" + domesticPaymentId, null, WSO2Controller.ACCESS_TOKEN_TYPE.CLIENT);
+    public ResponseEntity<String> getPaymentDetails(@RequestHeader(WSO2Controller.X_TPP_BANKID) final String bankId,
+                                                    @AuthenticationPrincipal final User user,
+                                                    @PathVariable("DomesticPaymentId") final String domesticPaymentId) {
+        return handlePayments(HttpMethod.GET, bankId, user, "/domestic-payments/" + domesticPaymentId, null, WSO2Controller.ACCESS_TOKEN_TYPE.CLIENT);
     }
 
     /**
@@ -136,20 +142,19 @@ public class DomesticPaymentsController extends WSO2Controller {
      * @return consentId if request it was not success return empty.
      */
     public OBWriteDomesticConsentResponse3 getConsentId(final @NotNull String bankId, final String body) {
-        final int tryCount = 3;
-        boolean force = false;
+        final int tryCount = 3; boolean force = false;
 
         try {
             for (int ii = tryCount; 0 < ii--; ) {
-                final String accessToken = getClientAccessTokenForPayments(bankId, force);
-                final BankInfo bankInfo = getTokenManager(bankId).getOauthconfig().getBankInfo();
+                final String   accessToken = getClientAccessToken(bankId, force);
+                final BankInfo bankInfo    = getTokenManager(bankId).getOauthconfig().getBankInfo();
                 // Setup HTTP headers
                 final Map<String, String> headers = new HashMap<>();
                 headers.put("Authorization", "Bearer " + accessToken);
                 headers.put("x-fapi-interaction-id", UUID.randomUUID().toString());
 
                 // get ConsentID
-                final HttpResponse httpResponse = doAPICall(WSO2Controller.HTTP_METHOD.POST, new URL(bankInfo.getPaymentsUrl() + "/domestic-payment-consents"), headers, body);
+                final HttpResponse httpResponse = doAPICall(HttpMethod.POST, new URL(bankInfo.getPaymentsUrl() + "/domestic-payment-consents"), headers, body);
 
                 // Sometimes WSO2 respond errors in xml
                 final String content = httpResponse.getContent();
@@ -158,7 +163,8 @@ public class DomesticPaymentsController extends WSO2Controller {
                 if (200 <= respondCode && 300 > respondCode) {
                     LOG.info("Respond code {}; respond: [{}]", respondCode, content);
                     final ObjectMapper mapper = new ObjectMapper();
-                    final OBWriteDomesticConsentResponse3 result = mapper.readValue(content, OBWriteDomesticConsentResponse3.class);
+                    final OBWriteDomesticConsentResponse3 result = mapper
+                            .readValue(content, OBWriteDomesticConsentResponse3.class);
                     result.setRawContent(content);
                     return result;
                 }

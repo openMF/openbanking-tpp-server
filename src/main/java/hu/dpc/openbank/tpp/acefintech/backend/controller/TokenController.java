@@ -28,32 +28,29 @@ public class TokenController extends WSO2Controller {
 
     @GetMapping(path = "/code/{Code}", produces = APPLICATION_JSON)
     public ResponseEntity<String> getTokenCodeForAccounts(@RequestHeader(WSO2Controller.X_TPP_BANKID) final String bankId, @AuthenticationPrincipal final User user, @PathVariable("Code") final String code) {
-        LOG.info("GET /token/v1/code/{}    bankId={}", code, bankId);
-        return getToken(bankId, user, code, SCOPE_ACCOUNTS);
+        LOG.info("GET /token/v1/code/{}    bankId={}", code, bankId); return getToken(bankId, user, code);
     }
 
     @GetMapping(path = "/code/{Code}/accounts", produces = APPLICATION_JSON)
     public ResponseEntity<String> getTokenCodeForAccounts2(@RequestHeader(WSO2Controller.X_TPP_BANKID) final String bankId, @AuthenticationPrincipal final User user, @PathVariable("Code") final String code) {
-        LOG.info("GET /accounts/token/v1/code/{}    bankId={}", code, bankId);
-        return getToken(bankId, user, code, SCOPE_ACCOUNTS);
+        LOG.info("GET /accounts/token/v1/code/{}    bankId={}", code, bankId); return getToken(bankId, user, code);
     }
 
     @GetMapping(path = "/code/{Code}/payments", produces = APPLICATION_JSON)
     public ResponseEntity<String> getTokenCodeForPayments(@RequestHeader(WSO2Controller.X_TPP_BANKID) final String bankId, @AuthenticationPrincipal final User user, @PathVariable("Code") final String code) {
-        LOG.info("GET /payments/token/v1/code/{}    bankId={}", code, bankId);
-        return getToken(bankId, user, code, SCOPE_PAYMENTS);
+        LOG.info("GET /payments/token/v1/code/{}    bankId={}", code, bankId); return getToken(bankId, user, code);
     }
 
-    public ResponseEntity<String> getToken(final String bankId, final User user, final String code, final String scope) {
+    public ResponseEntity<String> getToken(final String bankId, final User user, final String code) {
         final TokenManager tokenManager = getTokenManager(bankId);
         final TokenResponse accessTokenResponse = tokenManager.getAccessTokenFromCode(code);
         final int responseCode = accessTokenResponse.getHttpResponseCode();
         if (200 <= responseCode && 300 > responseCode) {
-            createAndSaveUserAccessToken(accessTokenResponse, bankId, user.getUsername(), scope);
+            createAndSaveUserAccessToken(accessTokenResponse, bankId, user.getUsername());
             return new ResponseEntity<>("", HttpStatus.OK);
         }
         LOG.warn("Code exchange not succeeded. HTTP[{}] RAWResponse [{}]", responseCode, accessTokenResponse.getRawContent());
-        final String consentId = getConsentId(bankId);
+        final String consentId = getAccountsConsentId(bankId);
         LOG.info("No user AccessToken exists. OAuth authorization required! ConsentID: [{}]", consentId);
         throw new OAuthAuthorizationRequiredException(consentId);
     }

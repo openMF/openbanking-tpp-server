@@ -51,6 +51,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter implements W
 
     @Override
     public void addCorsMappings(final CorsRegistry registry) {
+        // Enable support localhost develop
         registry.addMapping("/**").exposedHeaders("x-tpp-consentid", "x-fapi-interaction-id");
     }
 }

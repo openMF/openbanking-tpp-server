@@ -29,10 +29,7 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.security.core.userdetails.User;
 
 import javax.annotation.Nullable;
@@ -95,7 +92,7 @@ public class WSO2Controller {
      * @param jsonContentData
      * @return
      */
-    public static @NotNull HttpResponse doAPICall(final WSO2Controller.HTTP_METHOD httpMethod, final URL url,
+    public static @NotNull HttpResponse doAPICall(final HttpMethod httpMethod, final URL url,
                                                   final Map<String, String> headerParams,
                                                   @Nullable final String jsonContentData) {
         final HttpResponse httpResponse = new HttpResponse();
@@ -113,7 +110,7 @@ public class WSO2Controller {
                 conn.setDoOutput(hasContent);
 
                 conn.setRequestProperty(HttpHeaders.ACCEPT, APPLICATION_JSON);
-                conn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+                conn.setRequestProperty(HttpHeaders.CONTENT_TYPE, "application/json; charset=utf-8");
                 for (final Map.Entry<String, String> entry : headerParams.entrySet()) {
                     LOG.info("doAPICall-Header: {}: {}", entry.getKey(), entry.getValue());
                     conn.setRequestProperty(entry.getKey(), entry.getValue());
@@ -187,9 +184,9 @@ public class WSO2Controller {
      */
     public String userAccessTokenIsValid(final String bankId, final String userName) {
         LOG.info("userAccessTokenIsValid: bankId {} userName {}", bankId, userName);
-        AccessToken userAccessToken = getLatestUserAccessToken(userName, bankId, SCOPE_ACCOUNTS);
+        AccessToken userAccessToken = accessTokenRepository.getLatest(bankId, userName);
         if (null == userAccessToken) {
-            final String consentId = getConsentId(bankId);
+            final String consentId = getAccountsConsentId(bankId);
             LOG.info("No user AccessToken exists. OAuth authorization required! ConsentID: [{}]", consentId);
             throw new OAuthAuthorizationRequiredException(consentId);
         }
@@ -201,11 +198,11 @@ public class WSO2Controller {
             final TokenResponse refreshToken = tokenManager.refreshToken(userAccessToken.getRefreshToken());
 
             if (HttpURLConnection.HTTP_OK == refreshToken.getHttpResponseCode()) {
-                userAccessToken = createAndSaveUserAccessToken(refreshToken, bankId, userName, SCOPE_ACCOUNTS);
+                userAccessToken = createAndSaveUserAccessToken(refreshToken, bankId, userName);
             } else {
                 LOG.warn("Refresh token refreshing not succeeded. HTTP[{}] RAWResponse [{}]", refreshToken
                         .getHttpResponseCode(), refreshToken.getRawContent());
-                final String consentId = getConsentId(bankId);
+                final String consentId = getAccountsConsentId(bankId);
                 LOG.info("No user AccessToken exists. OAuth authorization required! ConsentID: [{}]", consentId);
                 throw new OAuthAuthorizationRequiredException(consentId);
             }
@@ -214,51 +211,6 @@ public class WSO2Controller {
         return userAccessToken.getAccessToken();
     }
 
-    /**
-     * Check user AccessToken is valid and not expired.
-     *
-     * @param bankId
-     * @param userName
-     * @throws OAuthAuthorizationRequiredException
-     */
-    public String userAccessTokenIsValidForPayments(final String bankId, final String userName) {
-        LOG.info("userAccessTokenIsValid: bankId {} userName {}", bankId, userName);
-        AccessToken userAccessToken = getLatestUserAccessToken(userName, bankId, SCOPE_PAYMENTS);
-        if (null == userAccessToken) {
-            throw new EntityNotFoundException("User access token not found for payments");
-        }
-
-        final TokenManager tokenManager = getTokenManager(bankId);
-        if (userAccessToken.isExpired()) {
-            LOG.info("User AccessToken is expired, trying refresh accessToken: [{}] refreshToken: [{}]", userAccessToken
-                    .getAccessToken(), userAccessToken.getRefreshToken());
-            final TokenResponse refreshToken = tokenManager.refreshToken(userAccessToken.getRefreshToken());
-
-            if (HttpURLConnection.HTTP_OK == refreshToken.getHttpResponseCode()) {
-                userAccessToken = createAndSaveUserAccessToken(refreshToken, bankId, userName, SCOPE_PAYMENTS);
-            } else {
-                LOG.warn("Refresh token refreshing not succeeded. HTTP[{}] RAWResponse [{}]", refreshToken
-                        .getHttpResponseCode(), refreshToken.getRawContent());
-                throw new EntityNotFoundException("User access token not found for payments after refresh");
-            }
-        }
-
-        return userAccessToken.getAccessToken();
-    }
-
-    /**
-     * Get latest user AccessToken.
-     *
-     * @param userId
-     * @param bankId
-     * @return
-     */
-    private AccessToken getLatestUserAccessToken(final String userId, final String bankId, final String scope) {
-        LOG.info("getLatestUserAccessToken userId {} bankId {}", userId, bankId);
-        final AccessToken accessToken = accessTokenRepository.getLatest(bankId, userId, scope);
-        LOG.info("AccessToken: {}", accessToken);
-        return accessToken;
-    }
 
     /**
      * Get Accounts ConsentId
@@ -266,12 +218,12 @@ public class WSO2Controller {
      * @param bankId
      * @return consentId if request it was not success return empty.
      */
-    public String getConsentId(final String bankId) {
+    public String getAccountsConsentId(final String bankId) {
         final int tryCount = 3; boolean force = false;
 
         try {
             for (int ii = tryCount; 0 < ii--; ) {
-                final String   accessToken = getClientAccessTokenForAccounts(bankId, force);
+                final String   accessToken = getClientAccessToken(bankId, force);
                 final BankInfo bankInfo    = getTokenManager(bankId).getOauthconfig().getBankInfo();
                 // Setup HTTP headers
                 final HttpHeaders headers = new HttpHeaders();
@@ -295,7 +247,7 @@ public class WSO2Controller {
                     throw new APICallException("Error creating JSON: " + e.getLocalizedMessage());
                 }
                 // get ConsentID
-                final HttpResponse httpResponse = doAPICall(WSO2Controller.HTTP_METHOD.POST, new URL(bankInfo.getAccountsUrl() + "/account-access-consents"), headers
+                final HttpResponse httpResponse = doAPICall(HttpMethod.POST, new URL(bankInfo.getAccountsUrl() + "/account-access-consents"), headers
                         .toSingleValueMap(), json);
 
                 // Sometimes WSO2 respond errors in xml
@@ -364,34 +316,34 @@ public class WSO2Controller {
      * @return
      */
     public @NotNull AccessToken createAndSaveUserAccessToken(final TokenResponse refreshToken, final String bankId,
-                                                             final String userName, final String scope) {
+                                                             final String userName) {
         final AccessToken userAccessToken = new AccessToken();
         userAccessToken.setAccessToken(refreshToken.getAccessToken());
         userAccessToken.setAccessTokenType("user");
-        userAccessToken.setScope(scope);
         userAccessToken.setExpires(refreshToken.getJwtExpires());
         userAccessToken.setRefreshToken(refreshToken.getRefreshToken());
         userAccessToken.setBankId(bankId);
         userAccessToken.setUserName(userName);
 
-        accessTokenRepository.remove(bankId, userName, scope);
+        // Remove previous
+        accessTokenRepository.remove(bankId, userName);
         accessTokenRepository.save(userAccessToken);
 
         return userAccessToken;
     }
 
+
     /**
-     * Get or create client AccessToken
-     *
+     * Handle accounts API request
+     * @param httpMethod
      * @param bankId
+     * @param user
+     * @param url
+     * @param jsonContent
      * @return
      */
-    protected String getClientAccessTokenForAccounts(final String bankId, final boolean force) {
-        return getClientAccessToken(bankId, force, SCOPE_ACCOUNTS);
-    }
-
-    protected @NotNull ResponseEntity<String> handleAccounts(final WSO2Controller.HTTP_METHOD httpMethod,
-                                                             final String bankId, final User user, final String url,
+    protected @NotNull ResponseEntity<String> handleAccounts(final HttpMethod httpMethod, final String bankId,
+                                                             final User user, final String url,
                                                              @Nullable final String jsonContent) {
         LOG.info("BankID: {} User {}", bankId, user);
         try {
@@ -407,8 +359,8 @@ public class WSO2Controller {
             final HttpResponse httpResponse = doAPICall(httpMethod, apiURL, headers.toSingleValueMap(), jsonContent);
 
             // Sometimes WSO2 respond errors in xml
-            final String content = httpResponse.getContent();
-            checkWSO2Errors(content); final int responseCode = httpResponse.getResponseCode();
+            final String content = httpResponse.getContent(); checkWSO2Errors(content);
+            final int responseCode = httpResponse.getResponseCode();
             if (responseCode < 200 || responseCode > 300) {
                 LOG.error("Respond code {}; respond: [{}]", responseCode, content);
                 // TODO Handle correctly if error will come processable
@@ -416,7 +368,8 @@ public class WSO2Controller {
                 // 401:[{"fault":{"code":900901,"message":"Invalid Credentials","description":"Access failure for API: /open-banking/v3.1/aisp/v3.1.2, version: v3.1.2 status: (900901) - Invalid Credentials. Make sure you have given the correct access token"}}]
                 // 403:[{"fault":{"code":900910,"message":"The access token does not allow you to access the requested resource","description":"Access failure for API: /open-banking/v3.1/aisp/v3.1.2, version: v3.1.2 status: (900910) - The access token does not allow you to access the requested resource"}}]
 //                if ((HttpStatus.UNAUTHORIZED.value() == responseCode) || (HttpStatus.INTERNAL_SERVER_ERROR.value() == responseCode && content.startsWith("java.lang.UnsupportedOperationException: User"))) {
-                final String consentId = getConsentId(bankId); throw new OAuthAuthorizationRequiredException(consentId);
+                final String consentId = getAccountsConsentId(bankId);
+                throw new OAuthAuthorizationRequiredException(consentId);
 //                }
             } final HttpStatus httpStatus = HttpStatus.resolve(responseCode);
             return new ResponseEntity<>(content, null == httpStatus ? HttpStatus.BAD_REQUEST : httpStatus);
@@ -433,8 +386,19 @@ public class WSO2Controller {
         }
     }
 
-    protected @NotNull ResponseEntity<String> handlePayments(final WSO2Controller.HTTP_METHOD httpMethod,
-                                                             final String bankId, final User user, final String url,
+    /**
+     * Handle payments API request
+     *
+     * @param httpMethod
+     * @param bankId
+     * @param user
+     * @param url
+     * @param jsonContent
+     * @param accessTokenType
+     * @return
+     */
+    protected @NotNull ResponseEntity<String> handlePayments(final HttpMethod httpMethod, final String bankId,
+                                                             final User user, final String url,
                                                              @Nullable final String jsonContent,
                                                              final WSO2Controller.ACCESS_TOKEN_TYPE accessTokenType) {
         LOG.info("BankID: {} User {}", bankId, user);
@@ -442,10 +406,10 @@ public class WSO2Controller {
             final String accessToken;
             switch (accessTokenType) {
                 case CLIENT:
-                    accessToken = getClientAccessTokenForPayments(bankId, true);
+                    accessToken = getClientAccessToken(bankId, true);
                     break;
                 case USER:
-                    accessToken = userAccessTokenIsValidForPayments(bankId, user.getUsername());
+                    accessToken = userAccessTokenIsValid(bankId, user.getUsername());
                     break;
                 default:
                     throw new IllegalStateException("Unexpected value: " + accessTokenType);
@@ -488,31 +452,19 @@ public class WSO2Controller {
      * @param bankId
      * @return
      */
-    protected String getClientAccessTokenForPayments(final String bankId, final boolean force) {
-        return getClientAccessToken(bankId, force, SCOPE_PAYMENTS);
-    }
-
-    /**
-     * Get or create client AccessToken
-     *
-     * @param bankId
-     * @return
-     */
-    protected String getClientAccessToken(final String bankId, final boolean force, final String scope) {
-        final String key = bankId + "|" + scope;
-        LOG.info("getClientAccessToken: bankId: {} force: {} key: {}", bankId, force, key);
-        AccessToken accessToken = clientAccessTokenCache.get(key);
-        LOG.info("Access token {} found in cache for bank {} by key {}", (null == accessToken ? "not"
-                                                                                              : ""), bankId, key);
+    protected String getClientAccessToken(final String bankId, final boolean force) {
+        LOG.info("getClientAccessToken: bankId: {} force: {}", bankId, force);
+        AccessToken accessToken = clientAccessTokenCache.get(bankId);
+        LOG.info("Access token {} found in cache for bank {}", (null == accessToken ? "not" : ""), bankId);
         if (null != accessToken) {
-            LOG.info("Cached Access ({}) token {} is expired {} expires {} current {}", key, accessToken
+            LOG.info("Cached Access ({}) token {} is expired {} expires {} current {}", bankId, accessToken
                     .getAccessToken(), accessToken.isExpired(), accessToken.getExpires(), System.currentTimeMillis());
         }
 
         if (force || null == accessToken || accessToken.isExpired()) {
-            final TokenManager  tokenManager  = getTokenManager(bankId);
-            final TokenResponse tokenResponse = tokenManager.getAccessTokenWithClientCredential(new String[]{scope});
-            final int           respondeCode  = tokenResponse.getHttpResponseCode();
+            final TokenManager tokenManager = getTokenManager(bankId); final TokenResponse tokenResponse = tokenManager
+                    .getAccessTokenWithClientCredential(); // new String[]{scope});
+            final int respondeCode = tokenResponse.getHttpResponseCode();
             if (200 <= respondeCode && 300 > respondeCode) {
 
                 final String accessTokenStr = tokenResponse.getAccessToken();
@@ -522,15 +474,14 @@ public class WSO2Controller {
                 accessToken = new AccessToken();
                 accessToken.setAccessToken(accessTokenStr);
                 accessToken.setAccessTokenType("client");
-                accessToken.setScope(scope);
                 accessToken.setExpires(tokenResponse.getExpiresIn());
                 accessToken.setBankId(bankId);
 
-                LOG.info("New Access ({}) token {} is expired {} expires {} current {}", key, accessToken
+                LOG.info("New Access ({}) token {} is expired {} expires {} current {}", bankId, accessToken
                         .getAccessToken(), accessToken.isExpired(), accessToken.getExpires(), System
                                  .currentTimeMillis());
 
-                clientAccessTokenCache.put(key, accessToken);
+                clientAccessTokenCache.put(bankId, accessToken);
             } else {
                 throw new APICallException(tokenResponse.getRawContent());
             }
@@ -539,13 +490,6 @@ public class WSO2Controller {
         return accessToken.getAccessToken();
     }
 
-
-    public enum HTTP_METHOD {
-        GET,
-        POST,
-        PUT,
-        DELETE
-    }
 
     public enum ACCESS_TOKEN_TYPE {
         /**

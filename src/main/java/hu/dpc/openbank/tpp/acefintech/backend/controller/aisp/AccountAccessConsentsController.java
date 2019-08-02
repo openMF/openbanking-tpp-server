@@ -10,6 +10,7 @@ package hu.dpc.openbank.tpp.acefintech.backend.controller.aisp;
 
 
 import hu.dpc.openbank.tpp.acefintech.backend.controller.WSO2Controller;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.User;
@@ -28,7 +29,7 @@ public class AccountAccessConsentsController extends WSO2Controller {
      */
     @GetMapping(path = "/{ConsentId}", produces = APPLICATION_JSON)
     public ResponseEntity<String> getConsent(@RequestHeader(X_TPP_BANKID) final String bankId, @AuthenticationPrincipal final User user, @PathVariable(CONSENT_ID) final String consentId) {
-        return handleAccounts(WSO2Controller.HTTP_METHOD.GET, bankId, user, "/account-access-consents/" + consentId, null);
+        return handleAccounts(HttpMethod.GET, bankId, user, "/account-access-consents/" + consentId, null);
     }
 
     /**
@@ -41,7 +42,7 @@ public class AccountAccessConsentsController extends WSO2Controller {
      */
     @DeleteMapping(path = "/{ConsentId}", produces = APPLICATION_JSON)
     public ResponseEntity<String> deleteConsent(@RequestHeader(X_TPP_BANKID) final String bankId, @AuthenticationPrincipal final User user, @PathVariable(CONSENT_ID) final String consentId) {
-        return handleAccounts(WSO2Controller.HTTP_METHOD.DELETE, bankId, user, "/account-access-consents/" + consentId, null);
+        return handleAccounts(HttpMethod.DELETE, bankId, user, "/account-access-consents/" + consentId, null);
     }
 
 }

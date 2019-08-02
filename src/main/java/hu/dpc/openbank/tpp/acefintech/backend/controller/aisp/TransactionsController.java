@@ -13,6 +13,7 @@ import hu.dpc.openbank.tpp.acefintech.backend.controller.WSO2Controller;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.User;
@@ -39,7 +40,7 @@ public class TransactionsController extends WSO2Controller {
                                                   @RequestParam(value = "toBookingDateTime", required = false) final String toBookingDateTime,
                                                   final HttpServletRequest request) {
         LOG.info("Called via Controller/RequestMapping /aisp/v1/transactions?fromBookingDateTime={}&toBookingDateTime={}", fromBookingDateTime, toBookingDateTime);
-        return handleAccounts(WSO2Controller.HTTP_METHOD.GET, bankId, user, "/transactions" + createParams(fromBookingDateTime, toBookingDateTime), null);
+        return handleAccounts(HttpMethod.GET, bankId, user, "/transactions" + createParams(fromBookingDateTime, toBookingDateTime), null);
     }
 
 
@@ -58,7 +59,7 @@ public class TransactionsController extends WSO2Controller {
             @RequestParam(name = "fromBookingDateTime", required = false) final String fromBookingDateTime,
             @RequestParam(name = "toBookingDateTime", required = false) final String toBookingDateTime) {
         LOG.info("Called /aisp/v1/accounts/{AccountId}/transactions?fromBookingDateTime={}&fromBookingDateTime={}", fromBookingDateTime, fromBookingDateTime);
-        return handleAccounts(WSO2Controller.HTTP_METHOD.GET, bankId, user, "/accounts/" + accountId + "/transactions" + createParams(fromBookingDateTime, toBookingDateTime), null);
+        return handleAccounts(HttpMethod.GET, bankId, user, "/accounts/" + accountId + "/transactions" + createParams(fromBookingDateTime, toBookingDateTime), null);
     }
 
     private @NotNull String createParams(final String fromBookingDateTime, final String toBookingDateTime) {

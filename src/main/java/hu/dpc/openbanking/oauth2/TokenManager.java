@@ -15,6 +15,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import hu.dpc.openbank.tpp.acefintech.backend.controller.WSO2Controller;
 import hu.dpc.openbank.tpp.acefintech.backend.enity.oauth2.TokenResponse;
 import hu.dpc.openbank.tpp.acefintech.backend.repository.APICallException;
+import org.jetbrains.annotations.NonNls;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,13 +34,32 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class TokenManager {
-    private static final Logger LOG = LoggerFactory.getLogger(TokenManager.class);
-
-
-    private final OAuthConfig oauthconfig;
+    private static final   Logger      LOG                = LoggerFactory.getLogger(TokenManager.class);
+    @NonNls
+    private static final   String      OPENBANKING_SCOPES = "openid profile accounts payments";
+    private final @NotNull OAuthConfig oauthconfig;
 
     public TokenManager(final OAuthConfig config) {
         oauthconfig = config;
+    }
+
+    /**
+     * Convert value-key pairs to urlencoded representation for POST
+     *
+     * @param params
+     * @return
+     */
+    private static @NotNull String getPostDataString(final Map<String, String> params) {
+        if (params.isEmpty()) return ""; final StringBuilder result = new StringBuilder(4096);
+        for (final Map.Entry<String, String> entry : params.entrySet()) {
+            result.append(URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8)) //
+                  .append('=').append(URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8)) //
+                  .append('&');
+        }
+        // remove latest '&' char from end
+        result.setLength(result.length() - 1);
+
+        return result.toString();
     }
 
     /**
@@ -50,15 +71,14 @@ public class TokenManager {
      *
      * @return
      */
-    public TokenResponse getAccessTokenWithClientCredential(final String[] scopes) {
+    public @NotNull TokenResponse getAccessTokenWithClientCredential() {
         final HashMap<String, String> postDataParams = new HashMap<>();
-        postDataParams.put("grant_type", "client_credentials");
-        postDataParams.put("scope", String.join(" ", scopes));
+        postDataParams.put("grant_type", "client_credentials"); postDataParams.put("scope", OPENBANKING_SCOPES);
 
         return doPost(postDataParams);
     }
 
-    public OAuthConfig getOauthconfig() {
+    public @NotNull OAuthConfig getOauthconfig() {
         return oauthconfig;
     }
 
@@ -86,17 +106,14 @@ public class TokenManager {
                 conn.setRequestProperty("Accept", WSO2Controller.APPLICATION_JSON);
                 conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
 
-                final String authorization = Base64.getEncoder().encodeToString((oauthconfig.getApiKey() + ':' + oauthconfig.getApiSecret()).getBytes());
+                final String authorization = Base64.getEncoder().encodeToString((oauthconfig
+                        .getApiKey() + ':' + oauthconfig.getApiSecret()).getBytes());
                 conn.setRequestProperty("Authorization", "Basic " + authorization);
 
-                final OutputStream os = conn.getOutputStream();
-                final BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, StandardCharsets.UTF_8));
-
-                writer.write(getPostDataString(postDataParams));
-
-                writer.flush();
-                writer.close();
-                os.close();
+                try (final OutputStream os = conn
+                        .getOutputStream(); final BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, StandardCharsets.UTF_8))) {
+                    writer.write(getPostDataString(postDataParams)); writer.flush();
+                }
 
                 responseCode = conn.getResponseCode();
                 LOG.info("Response code: {}", responseCode);
@@ -109,9 +126,8 @@ public class TokenManager {
                     result.setHttpResponseCode(responseCode);
                     result.setRawContent(response);
                     return result;
-                }
-                final ObjectMapper mapper = new ObjectMapper();
-                final TokenResponse result = mapper.readValue(response, TokenResponse.class);
+                } final ObjectMapper mapper = new ObjectMapper();
+                final TokenResponse  result = mapper.readValue(response, TokenResponse.class);
                 result.setRawContent(response);
                 result.setHttpResponseCode(responseCode);
 
@@ -150,23 +166,6 @@ public class TokenManager {
         return result;
     }
 
-    private static String getPostDataString(final Map<String, String> params) {
-        final StringBuilder result = new StringBuilder(4096);
-        boolean first = true;
-        for (final Map.Entry<String, String> entry : params.entrySet()) {
-            if (first)
-                first = false;
-            else
-                result.append("&");
-
-            result.append(URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8));
-            result.append("=");
-            result.append(URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8));
-        }
-
-        return result.toString();
-    }
-
     /**
      * <pre>curl -k -v -X POST "https://localhost:8243/token?
      *                               code=cc0970dd-476a-381e-bdd3-84bf69091932
@@ -179,7 +178,7 @@ public class TokenManager {
      * @param code
      * @return
      */
-    public TokenResponse getAccessTokenFromCode(final String code) {
+    public @NotNull TokenResponse getAccessTokenFromCode(final String code) {
         final HashMap<String, String> postDataParams = new HashMap<>();
         postDataParams.put("code", code);
         postDataParams.put("client_id", oauthconfig.getApiKey());
@@ -201,11 +200,10 @@ public class TokenManager {
      * @param token
      * @return
      */
-    public TokenResponse refreshToken(final String token) {
-        final HashMap<String, String> postDataParams = new HashMap<>();
+    public @NotNull TokenResponse refreshToken(final String token) {
+        final HashMap<String, String> postDataParams = new HashMap<>(); postDataParams.put("refresh_token", token);
         postDataParams.put("client_id", oauthconfig.getApiKey());
         postDataParams.put("grant_type", "refresh_token");
-        postDataParams.put("refresh_token", token);
         postDataParams.put("redirect_uri", oauthconfig.getCallbackURL());
 
         return doPost(postDataParams);
