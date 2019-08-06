@@ -6,7 +6,10 @@
  * https://mozilla.org/MPL/2.0/.
  */
 
-@ParametersAreNonnullByDefault
-package hu.dpc.openbanking.oauth2;
+package hu.dpc.openbank.exceptions;
 
-import javax.annotation.ParametersAreNonnullByDefault;
+public class APICallException extends RuntimeException {
+    public APICallException(final String message) {
+        super(message);
+    }
+}

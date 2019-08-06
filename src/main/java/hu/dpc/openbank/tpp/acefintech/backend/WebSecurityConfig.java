@@ -34,14 +34,14 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter implements W
 
     @Override
     protected void configure(final @NotNull HttpSecurity http) throws Exception {
-        http //
-             .csrf().disable() // enable it for support localhost develop
-             .httpBasic() //
-             .and().authorizeRequests() //
-             .antMatchers(HttpMethod.OPTIONS, "/**").permitAll() // enable it for support localhost develop
-             .anyRequest().authenticated() //
-             .and().formLogin().loginPage("/netbank/login") //
-             .and().logout().permitAll();
+//@formatter:off
+        http.csrf().disable() // enable it for support localhost develop
+            .httpBasic().and().authorizeRequests()
+            .antMatchers(HttpMethod.OPTIONS, "/**").permitAll() // enable it for support localhost develop
+            .anyRequest().authenticated()
+            .and().formLogin().loginPage("/netbank/login")
+            .and().logout().permitAll();
+//@formatter:on
     }
 
     @Autowired

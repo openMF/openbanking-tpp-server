@@ -5,12 +5,11 @@
  *
  * https://mozilla.org/MPL/2.0/.
  */
-package hu.dpc.openbank.tpp.acefintech.backend.rest.parser;
+package uk.org.openbanking.v3_1_2.parser;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
-import hu.dpc.openbank.tpp.acefintech.backend.util.DateUtils;
 
 import java.io.IOException;
 import java.time.LocalDateTime;

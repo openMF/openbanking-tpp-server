@@ -11,6 +11,7 @@ package hu.dpc.openbank.tpp.acefintech.backend.controller;
 
 import hu.dpc.openbank.tpp.acefintech.backend.enity.bank.SupportedBanks;
 import hu.dpc.openbank.tpp.acefintech.backend.repository.BankRepository;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -24,7 +25,7 @@ public class BankController {
         this.bankRepository = bankRepository;
     }
 
-    @GetMapping(path = "/supported", produces = WSO2Controller.APPLICATION_JSON)
+    @GetMapping(path = "/supported", produces = MediaType.APPLICATION_JSON_VALUE)
     public SupportedBanks getSupportedBanks() {
         final SupportedBanks supportedBanks = new SupportedBanks();
         supportedBanks.setBankInfoList(bankRepository.findAll());

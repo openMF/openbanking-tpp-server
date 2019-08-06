@@ -10,21 +10,19 @@ package hu.dpc.openbank.tpp.acefintech.backend.controller.pisp;
 
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import hu.dpc.common.http.HttpHelper;
+import hu.dpc.common.http.HttpResponse;
+import hu.dpc.openbank.exceptions.APICallException;
 import hu.dpc.openbank.tpp.acefintech.backend.controller.WSO2Controller;
-import hu.dpc.openbank.tpp.acefintech.backend.enity.HttpResponse;
 import hu.dpc.openbank.tpp.acefintech.backend.enity.bank.BankInfo;
 import hu.dpc.openbank.tpp.acefintech.backend.enity.bank.PaymentConsent;
-import hu.dpc.openbank.tpp.acefintech.backend.repository.APICallException;
 import hu.dpc.openbank.tpp.acefintech.backend.repository.BankConfigException;
 import hu.dpc.openbank.tpp.acefintech.backend.repository.PaymentConsentRepository;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.util.MultiValueMap;
@@ -78,7 +76,7 @@ public class DomesticPaymentsController extends WSO2Controller {
      * @param user
      * @return
      */
-    @PostMapping(path = "executePayment/{ConsentId}", produces = APPLICATION_JSON)
+    @PostMapping(path = "executePayment/{ConsentId}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> executePayment(@RequestHeader(WSO2Controller.X_TPP_BANKID) final String bankId,
                                                  @AuthenticationPrincipal final User user,
                                                  @PathVariable(CONSENT_ID) final String consentId) {
@@ -128,7 +126,7 @@ public class DomesticPaymentsController extends WSO2Controller {
      * @param domesticPaymentId
      * @return
      */
-    @GetMapping(path = "payment/{DomesticPaymentId}", produces = APPLICATION_JSON)
+    @GetMapping(path = "payment/{DomesticPaymentId}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> getPaymentDetails(@RequestHeader(WSO2Controller.X_TPP_BANKID) final String bankId,
                                                     @AuthenticationPrincipal final User user,
                                                     @PathVariable("DomesticPaymentId") final String domesticPaymentId) {
@@ -154,12 +152,12 @@ public class DomesticPaymentsController extends WSO2Controller {
                 headers.put("x-fapi-interaction-id", UUID.randomUUID().toString());
 
                 // get ConsentID
-                final HttpResponse httpResponse = doAPICall(HttpMethod.POST, new URL(bankInfo.getPaymentsUrl() + "/domestic-payment-consents"), headers, body);
+                final HttpResponse httpResponse = HttpHelper
+                        .doAPICall(HttpMethod.POST, new URL(bankInfo.getPaymentsUrl() + "/domestic-payment-consents"), headers, body);
 
                 // Sometimes WSO2 respond errors in xml
-                final String content = httpResponse.getContent();
-                checkWSO2Errors(content);
-                final int respondCode = httpResponse.getResponseCode();
+                final String content = httpResponse.getHttpRawContent(); HttpHelper.checkWSO2Errors(content);
+                final int respondCode = httpResponse.getHttpResponseCode();
                 if (200 <= respondCode && 300 > respondCode) {
                     LOG.info("Respond code {}; respond: [{}]", respondCode, content);
                     final ObjectMapper mapper = new ObjectMapper();

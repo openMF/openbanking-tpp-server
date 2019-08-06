@@ -6,7 +6,7 @@
  * https://mozilla.org/MPL/2.0/.
  */
 
-package hu.dpc.openbanking.oauth2;
+package hu.dpc.openbank.oauth2;
 
 import hu.dpc.openbank.tpp.acefintech.backend.enity.bank.BankInfo;
 

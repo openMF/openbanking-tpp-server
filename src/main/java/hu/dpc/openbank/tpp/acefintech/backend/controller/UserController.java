@@ -11,6 +11,7 @@ package hu.dpc.openbank.tpp.acefintech.backend.controller;
 
 import hu.dpc.openbank.tpp.acefintech.backend.enity.bank.SupportedBanks;
 import hu.dpc.openbank.tpp.acefintech.backend.repository.BankRepository;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,7 +27,7 @@ public class UserController {
         this.bankRepository = bankRepository;
     }
 
-    @GetMapping(path = "/banks", produces = WSO2Controller.APPLICATION_JSON)
+    @GetMapping(path = "/banks", produces = MediaType.APPLICATION_JSON_VALUE)
     public SupportedBanks getSupportedBanks(@AuthenticationPrincipal final User user) {
         final SupportedBanks supportedBanks = new SupportedBanks();
         supportedBanks.setBankInfoList(bankRepository.getUserConnectedBanks(user.getUsername()));

@@ -11,6 +11,7 @@ package hu.dpc.openbank.tpp.acefintech.backend.controller.aisp;
 
 import hu.dpc.openbank.tpp.acefintech.backend.controller.WSO2Controller;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.User;
@@ -26,7 +27,7 @@ public class BalancesController extends WSO2Controller {
      * @param user
      * @return
      */
-    @GetMapping(path = "balances", produces = APPLICATION_JSON)
+    @GetMapping(path = "balances", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> getBalances(@RequestHeader(WSO2Controller.X_TPP_BANKID) final String bankId, @AuthenticationPrincipal final User user) {
         return handleAccounts(HttpMethod.GET, bankId, user, "/balances", null);
     }
@@ -39,7 +40,7 @@ public class BalancesController extends WSO2Controller {
      * @param accountId
      * @return
      */
-    @GetMapping(path = "accounts/{AccountId}/balances", produces = APPLICATION_JSON)
+    @GetMapping(path = "accounts/{AccountId}/balances", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> getAccountBalance(@RequestHeader(WSO2Controller.X_TPP_BANKID) final String bankId, @AuthenticationPrincipal final User user, @PathVariable(ACCOUNT_ID) final String accountId) {
         return handleAccounts(HttpMethod.GET, bankId, user, "/accounts/" + accountId + "/balances", null);
     }

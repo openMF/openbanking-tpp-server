@@ -6,7 +6,7 @@
  * https://mozilla.org/MPL/2.0/.
  */
 
-package hu.dpc.openbank.tpp.acefintech.backend.repository;
+package hu.dpc.common.http.oauth2;
 
 public class OAuthAuthorizationRequiredException extends RuntimeException {
     private final String consentId;

@@ -5,7 +5,7 @@
  *
  * https://mozilla.org/MPL/2.0/.
  */
-package hu.dpc.openbank.tpp.acefintech.backend.util;
+package uk.org.openbanking.v3_1_2.parser;
 
 import org.springframework.util.Assert;
 

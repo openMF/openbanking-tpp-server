@@ -6,11 +6,13 @@
  * https://mozilla.org/MPL/2.0/.
  */
 
-package hu.dpc.openbank.tpp.acefintech.backend.enity.oauth2;
+package hu.dpc.common.http.oauth2;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import hu.dpc.common.http.HttpResponse;
 
 /**
  * <pre>curl -k -X doPost "https://localhost:8243/token"
@@ -25,7 +27,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  *           -H "Authorization: Basic bllkSmFfS0huaWNWWENZRU1OU2dLVkNpQ3p3YTpHWmhXOFlDZkM4VEM0dTJHYVJYU1hsY1JOR3dh"</pre>
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class TokenResponse {
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class TokenResponse extends HttpResponse {
     @JsonProperty("access_token")
     private String accessToken;
     @JsonProperty("refresh_token")
@@ -37,7 +40,7 @@ public class TokenResponse {
     @JsonProperty("token_type")
     private String tokenType;
     @JsonProperty("expires_in")
-    private long expiresIn;
+    private long   expiresIn;
     @JsonProperty("error")
     private String error;
     @JsonProperty("error_description")
@@ -45,11 +48,7 @@ public class TokenResponse {
     @JsonIgnore
     private String subject;
     @JsonIgnore
-    private long jwtExpires;
-    @JsonIgnore
-    private int httpResponseCode = -1;
-    @JsonIgnore
-    private String rawContent;
+    private long   jwtExpires;
 
     public String getAccessToken() {
         return accessToken;
@@ -99,13 +98,6 @@ public class TokenResponse {
         this.expiresIn = (expiresIn * 1000L) + System.currentTimeMillis();
     }
 
-    public int getHttpResponseCode() {
-        return httpResponseCode;
-    }
-
-    public void setHttpResponseCode(final int httpResponseCode) {
-        this.httpResponseCode = httpResponseCode;
-    }
 
     public String getError() {
         return error;
@@ -137,13 +129,5 @@ public class TokenResponse {
 
     public void setJwtExpires(final long jwtExpires) {
         this.jwtExpires = jwtExpires;
-    }
-
-    public String getRawContent() {
-        return rawContent;
-    }
-
-    public void setRawContent(final String rawContent) {
-        this.rawContent = rawContent;
     }
 }

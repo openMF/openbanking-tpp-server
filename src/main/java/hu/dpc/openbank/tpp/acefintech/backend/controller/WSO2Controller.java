@@ -11,44 +11,43 @@ package hu.dpc.openbank.tpp.acefintech.backend.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import hu.dpc.openbank.tpp.acefintech.backend.enity.HttpResponse;
+import hu.dpc.common.http.HttpHelper;
+import hu.dpc.common.http.HttpResponse;
+import hu.dpc.common.http.oauth2.OAuthAuthorizationRequiredException;
+import hu.dpc.common.http.oauth2.TokenResponse;
+import hu.dpc.openbank.exceptions.APICallException;
+import hu.dpc.openbank.oauth2.OAuthConfig;
+import hu.dpc.openbank.oauth2.TokenManager;
 import hu.dpc.openbank.tpp.acefintech.backend.enity.aisp.AccountConsentPermissions;
 import hu.dpc.openbank.tpp.acefintech.backend.enity.aisp.Consents;
 import hu.dpc.openbank.tpp.acefintech.backend.enity.aisp.ConsentsRequest;
 import hu.dpc.openbank.tpp.acefintech.backend.enity.aisp.ConsentsResponse;
 import hu.dpc.openbank.tpp.acefintech.backend.enity.bank.AccessToken;
 import hu.dpc.openbank.tpp.acefintech.backend.enity.bank.BankInfo;
-import hu.dpc.openbank.tpp.acefintech.backend.enity.oauth2.TokenResponse;
-import hu.dpc.openbank.tpp.acefintech.backend.repository.*;
-import hu.dpc.openbanking.oauth2.HttpHelper;
-import hu.dpc.openbanking.oauth2.HttpsTrust;
-import hu.dpc.openbanking.oauth2.OAuthConfig;
-import hu.dpc.openbanking.oauth2.TokenManager;
+import hu.dpc.openbank.tpp.acefintech.backend.repository.AccessTokenRepository;
+import hu.dpc.openbank.tpp.acefintech.backend.repository.BankConfigException;
+import hu.dpc.openbank.tpp.acefintech.backend.repository.BankIDNotFoundException;
+import hu.dpc.openbank.tpp.acefintech.backend.repository.BankRepository;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.*;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.User;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
-import javax.net.ssl.HttpsURLConnection;
 import javax.persistence.EntityNotFoundException;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 
 @ParametersAreNonnullByDefault
@@ -59,8 +58,6 @@ public class WSO2Controller {
     @NonNls
     public static final  String                        ACCOUNT_ID             = "AccountId";
     @NonNls
-    public static final  String                        APPLICATION_JSON       = MediaType.APPLICATION_JSON_VALUE;
-    @NonNls
     public static final  String                        CONSENT_ID             = "ConsentId";
     public static final  String                        SCOPE_ACCOUNTS         = "accounts";
     public static final  String                        SCOPE_PAYMENTS         = "payments";
@@ -69,13 +66,6 @@ public class WSO2Controller {
             .getLogger(WSO2Controller.class);
     private static final HashMap<String, TokenManager> tokenManagerCache      = new HashMap<>();
     private static final HashMap<String, AccessToken>  clientAccessTokenCache = new HashMap<>();
-    /**
-     * WSO2 error message, when BANK API not available.
-     */
-    private static final String                        BANK_NOT_WORKING_ERROR = "<am:fault xmlns:am=\"http://wso2.org/apimanager\"><am:code>101503</am:code><am:type>Status report</am:type><am:message>Runtime Error</am:message><am:description>Error connecting to the back end</am:description></am:fault>";
-    //    "<am:fault xmlns:am=\"http://wso2.org/apimanager\"><am:code>303001</am:code><am:type>Status report</am:type><am:message>Runtime Error</am:message><am:description>Currently , Address endpoint : [ Name : AccountInformationAPI--vv1_APIproductionEndpoint ] [ State : SUSPENDED ]</am:description></am:fault>";
-    private static final String                        BANK_APIS_SUSPENDED    = "<am:fault xmlns:am=\"http://wso2.org/apimanager\"><am:code>303001</am:code>";
-    private static final String                        WSO2_METHOD_NOT_FOUND  = "<am:fault xmlns:am=\"http://wso2.org/apimanager\"><am:code>404</am:code><am:type>Status report</am:type><am:message>Runtime Error</am:message><am:description>No matching resource found for given API Request</am:description></am:fault>";
     @Autowired
     private              AccessTokenRepository         accessTokenRepository;
     /**
@@ -84,96 +74,6 @@ public class WSO2Controller {
     @Autowired
     private              BankRepository                bankRepository;
 
-    /**
-     * Execute API request.
-     *
-     * @param httpMethod
-     * @param headerParams
-     * @param jsonContentData
-     * @return
-     */
-    public static @NotNull HttpResponse doAPICall(final HttpMethod httpMethod, final URL url,
-                                                  final Map<String, String> headerParams,
-                                                  @Nullable final String jsonContentData) {
-        final HttpResponse httpResponse = new HttpResponse();
-        for (int trycount = HttpHelper.CONNECTION_REFUSED_TRYCOUNT; 0 < trycount--; ) {
-            try {
-                LOG.info("doAPICall: {} {}", httpMethod.name(), url);
-                final HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
-                HttpsTrust.INSTANCE.trust(conn);
-                conn.setReadTimeout(10000);
-                conn.setConnectTimeout(15000);
-                conn.setRequestMethod(httpMethod.name());
-                conn.setDoInput(true);
-                final boolean hasContent = !(null == jsonContentData || jsonContentData.isEmpty());
-
-                conn.setDoOutput(hasContent);
-
-                conn.setRequestProperty(HttpHeaders.ACCEPT, APPLICATION_JSON);
-                conn.setRequestProperty(HttpHeaders.CONTENT_TYPE, "application/json; charset=utf-8");
-                for (final Map.Entry<String, String> entry : headerParams.entrySet()) {
-                    LOG.info("doAPICall-Header: {}: {}", entry.getKey(), entry.getValue());
-                    conn.setRequestProperty(entry.getKey(), entry.getValue());
-                }
-
-                if (hasContent) {
-                    LOG.info("doAPICall-body: [{}]", jsonContentData); try (final OutputStream os = conn
-                            .getOutputStream(); final BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, StandardCharsets.UTF_8))) {
-                        writer.write(jsonContentData);
-                        writer.flush();
-                    }
-                }
-
-                final int responseCode = conn.getResponseCode();
-                LOG.info("Response code: {}", responseCode);
-                final String response = HttpHelper.getResponseContent(conn);
-                LOG.info("Response: [{}]\n[{}]", response, conn.getResponseMessage());
-
-                httpResponse.setResponseCode(responseCode);
-                httpResponse.setContent(response);
-                return httpResponse;
-            } catch (final ConnectException ce) {
-                LOG.error("Connection refused: trying... {} {}", trycount, ce.getLocalizedMessage());
-                if (0 < trycount) {
-                    try {
-                        Thread.sleep(HttpHelper.CONNECTION_REFUSED_WAIT_IN_MS);
-                    } catch (final InterruptedException e) {
-                        // DO NOTHING
-                    }
-                } else {
-                    throw new APICallException("Connection refused");
-                }
-            } catch (final IOException e) {
-                httpResponse.setResponseCode(-1);
-                httpResponse.setContent(e.getLocalizedMessage());
-                LOG.error("doAPICall", e);
-                return httpResponse;
-            }
-        }
-
-        return httpResponse;
-    }
-
-    /**
-     * Handle WSO2 errors
-     *
-     * @param content
-     */
-    public static void checkWSO2Errors(final String content) {
-        if (!content.isEmpty() && '<' == content.charAt(0)) {
-            LOG.error("Respond in XML, it's mean something error occured! {}", content);
-            if (BANK_NOT_WORKING_ERROR.equals(content)) {
-                throw new APICallException("API gateway cannot connect to BANK backend!");
-            }
-            if (content.startsWith(BANK_APIS_SUSPENDED)) {
-                throw new APICallException("API gateway suspended!");
-            }
-            if (WSO2_METHOD_NOT_FOUND.equals(content)) {
-                throw new APICallException("API method not found!");
-            }
-            throw new APICallException("API gateway problem!");
-        }
-    }
 
     /**
      * Check user AccessToken is valid and not expired.
@@ -201,7 +101,7 @@ public class WSO2Controller {
                 userAccessToken = createAndSaveUserAccessToken(refreshToken, bankId, userName);
             } else {
                 LOG.warn("Refresh token refreshing not succeeded. HTTP[{}] RAWResponse [{}]", refreshToken
-                        .getHttpResponseCode(), refreshToken.getRawContent());
+                        .getHttpResponseCode(), refreshToken.getHttpRawContent());
                 final String consentId = getAccountsConsentId(bankId);
                 LOG.info("No user AccessToken exists. OAuth authorization required! ConsentID: [{}]", consentId);
                 throw new OAuthAuthorizationRequiredException(consentId);
@@ -247,13 +147,13 @@ public class WSO2Controller {
                     throw new APICallException("Error creating JSON: " + e.getLocalizedMessage());
                 }
                 // get ConsentID
-                final HttpResponse httpResponse = doAPICall(HttpMethod.POST, new URL(bankInfo.getAccountsUrl() + "/account-access-consents"), headers
+                final HttpResponse httpResponse = HttpHelper
+                        .doAPICall(HttpMethod.POST, new URL(bankInfo.getAccountsUrl() + "/account-access-consents"), headers
                         .toSingleValueMap(), json);
 
                 // Sometimes WSO2 respond errors in xml
-                final String content = httpResponse.getContent();
-                checkWSO2Errors(content);
-                final int respondCode = httpResponse.getResponseCode();
+                final String content = httpResponse.getHttpRawContent(); HttpHelper.checkWSO2Errors(content);
+                final int respondCode = httpResponse.getHttpResponseCode();
                 if (200 <= respondCode && 300 > respondCode) {
                     LOG.info("Respond code {}; respond: [{}]", respondCode, content);
                     final ConsentsResponse response = mapper.readValue(content, ConsentsResponse.class);
@@ -335,6 +235,7 @@ public class WSO2Controller {
 
     /**
      * Handle accounts API request
+     *
      * @param httpMethod
      * @param bankId
      * @param user
@@ -356,11 +257,12 @@ public class WSO2Controller {
             headers.add(X_FAPI_INTERACTION_ID, UUID.randomUUID().toString());
             final URL apiURL = new URL(bankInfo.getAccountsUrl() + url);
             LOG.info("Call API: {}", apiURL);
-            final HttpResponse httpResponse = doAPICall(httpMethod, apiURL, headers.toSingleValueMap(), jsonContent);
+            final HttpResponse httpResponse = HttpHelper.doAPICall(httpMethod, apiURL, headers
+                    .toSingleValueMap(), jsonContent);
 
             // Sometimes WSO2 respond errors in xml
-            final String content = httpResponse.getContent(); checkWSO2Errors(content);
-            final int responseCode = httpResponse.getResponseCode();
+            final String content = httpResponse.getHttpRawContent(); HttpHelper.checkWSO2Errors(content);
+            final int responseCode = httpResponse.getHttpResponseCode();
             if (responseCode < 200 || responseCode > 300) {
                 LOG.error("Respond code {}; respond: [{}]", responseCode, content);
                 // TODO Handle correctly if error will come processable
@@ -422,12 +324,12 @@ public class WSO2Controller {
             headers.add(X_FAPI_INTERACTION_ID, UUID.randomUUID().toString());
             final URL apiURL = new URL(bankInfo.getPaymentsUrl() + url);
             LOG.info("Call API with {} accessToken: {}", accessTokenType.name(), apiURL);
-            final HttpResponse httpResponse = doAPICall(httpMethod, apiURL, headers.toSingleValueMap(), jsonContent);
+            final HttpResponse httpResponse = HttpHelper.doAPICall(httpMethod, apiURL, headers
+                    .toSingleValueMap(), jsonContent);
 
             // Sometimes WSO2 respond errors in xml
-            final String content = httpResponse.getContent();
-            checkWSO2Errors(content);
-            final int respondCode = httpResponse.getResponseCode();
+            final String content = httpResponse.getHttpRawContent(); HttpHelper.checkWSO2Errors(content);
+            final int respondCode = httpResponse.getHttpResponseCode();
             if (!(200 <= respondCode && 300 > respondCode)) {
                 LOG.error("Respond code {}; respond: [{}]", respondCode, content);
             }
@@ -483,7 +385,7 @@ public class WSO2Controller {
 
                 clientAccessTokenCache.put(bankId, accessToken);
             } else {
-                throw new APICallException(tokenResponse.getRawContent());
+                throw new APICallException(tokenResponse.getHttpRawContent());
             }
         }
 

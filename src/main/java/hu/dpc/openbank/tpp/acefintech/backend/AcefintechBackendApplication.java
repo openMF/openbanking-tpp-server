@@ -10,8 +10,10 @@ package hu.dpc.openbank.tpp.acefintech.backend;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = "hu.dpc")
+@EnableTransactionManagement
 public class AcefintechBackendApplication {
 
     public static void main(final String[] args) {

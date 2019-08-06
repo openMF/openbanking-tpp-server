@@ -13,8 +13,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import hu.dpc.openbank.tpp.acefintech.backend.rest.parser.LocalFormatDateTimeDeserializer;
-import hu.dpc.openbank.tpp.acefintech.backend.rest.parser.LocalFormatDateTimeSerializer;
+import uk.org.openbanking.v3_1_2.parser.LocalFormatDateTimeDeserializer;
+import uk.org.openbanking.v3_1_2.parser.LocalFormatDateTimeSerializer;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -23,21 +23,21 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Consents {
     @JsonProperty("Permissions")
-    public List<String> permissions;
+    public  List<String>  permissions;
     @JsonSerialize(using = LocalFormatDateTimeSerializer.class)
     @JsonDeserialize(using = LocalFormatDateTimeDeserializer.class)
     @JsonProperty("ExpirationDateTime")
-    public LocalDateTime expirationDateTime;
+    public  LocalDateTime expirationDateTime;
     @JsonProperty("TransactionFromDateTime")
     @JsonSerialize(using = LocalFormatDateTimeSerializer.class)
     @JsonDeserialize(using = LocalFormatDateTimeDeserializer.class)
-    public LocalDateTime transactionFromDateTime;
+    public  LocalDateTime transactionFromDateTime;
     @JsonProperty("TransactionToDateTime")
     @JsonSerialize(using = LocalFormatDateTimeSerializer.class)
     @JsonDeserialize(using = LocalFormatDateTimeDeserializer.class)
-    public LocalDateTime transactionToDateTime;
+    public  LocalDateTime transactionToDateTime;
     @JsonProperty("ConsentId")
-    private String consentId;
+    private String        consentId;
 
     public String getConsentId() {
         return consentId;

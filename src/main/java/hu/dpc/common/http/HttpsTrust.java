@@ -6,7 +6,7 @@
  * https://mozilla.org/MPL/2.0/.
  */
 
-package hu.dpc.openbanking.oauth2;
+package hu.dpc.common.http;
 
 import javax.net.ssl.*;
 import java.net.HttpURLConnection;

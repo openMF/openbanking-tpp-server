@@ -6,19 +6,21 @@
  * https://mozilla.org/MPL/2.0/.
  */
 
-package hu.dpc.openbanking.oauth2;
+package hu.dpc.openbank.oauth2;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import hu.dpc.openbank.tpp.acefintech.backend.controller.WSO2Controller;
-import hu.dpc.openbank.tpp.acefintech.backend.enity.oauth2.TokenResponse;
-import hu.dpc.openbank.tpp.acefintech.backend.repository.APICallException;
+import hu.dpc.common.http.HttpHelper;
+import hu.dpc.common.http.HttpsTrust;
+import hu.dpc.common.http.oauth2.TokenResponse;
+import hu.dpc.openbank.exceptions.APICallException;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
 
 import javax.net.ssl.HttpsURLConnection;
 import java.io.BufferedWriter;
@@ -103,7 +105,7 @@ public class TokenManager {
                 conn.setDoInput(true);
                 conn.setDoOutput(true);
 
-                conn.setRequestProperty("Accept", WSO2Controller.APPLICATION_JSON);
+                conn.setRequestProperty("Accept", MediaType.APPLICATION_JSON_VALUE);
                 conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
 
                 final String authorization = Base64.getEncoder().encodeToString((oauthconfig
@@ -123,12 +125,11 @@ public class TokenManager {
                 if (!response.isEmpty() && '<' == response.charAt(0)) {
                     // Response is not JSON
                     final TokenResponse result = new TokenResponse();
-                    result.setHttpResponseCode(responseCode);
-                    result.setRawContent(response);
+                    result.setHttpResponseCode(responseCode); result.setHttpRawContent(response);
                     return result;
                 } final ObjectMapper mapper = new ObjectMapper();
                 final TokenResponse  result = mapper.readValue(response, TokenResponse.class);
-                result.setRawContent(response);
+                result.setHttpRawContent(response);
                 result.setHttpResponseCode(responseCode);
 
                 if (java.net.HttpURLConnection.HTTP_OK == responseCode) {

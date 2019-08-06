@@ -40,7 +40,7 @@ public interface AccessTokenRepository extends JpaRepository<AccessToken, String
      * @return
      */
     @Transactional
-    @Modifying(clearAutomatically = true)
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(value = "delete from ACCESS_TOKEN a\n" //
             + "      where USERNAME = :username\n" //
             + "        and BANK_ID = :bankid\n"  //

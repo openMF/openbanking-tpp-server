@@ -11,6 +11,7 @@ package hu.dpc.openbank.tpp.acefintech.backend.controller.aisp;
 
 import hu.dpc.openbank.tpp.acefintech.backend.controller.WSO2Controller;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.User;
@@ -26,7 +27,7 @@ public class PartiesController extends WSO2Controller {
      * @param user
      * @return
      */
-    @GetMapping(path = "party", produces = APPLICATION_JSON)
+    @GetMapping(path = "party", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> getAuthorisedUser(@RequestHeader(WSO2Controller.X_TPP_BANKID) final String bankId, @AuthenticationPrincipal final User user) {
         return handleAccounts(HttpMethod.GET, bankId, user, "/party", null);
     }
@@ -39,7 +40,7 @@ public class PartiesController extends WSO2Controller {
      * @param accountId
      * @return
      */
-    @GetMapping(path = "accounts/{AccountId}/party", produces = APPLICATION_JSON)
+    @GetMapping(path = "accounts/{AccountId}/party", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> getAccountOwner(@RequestHeader(WSO2Controller.X_TPP_BANKID) final String bankId, @AuthenticationPrincipal final User user, @PathVariable(ACCOUNT_ID) final String accountId) {
         return handleAccounts(HttpMethod.GET, bankId, user, "/accounts/" + accountId + "/party", null);
     }
@@ -52,7 +53,7 @@ public class PartiesController extends WSO2Controller {
      * @param accountId
      * @return
      */
-    @GetMapping(path = "accounts/{AccountId}/parties", produces = APPLICATION_JSON)
+    @GetMapping(path = "accounts/{AccountId}/parties", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> getParties(@RequestHeader(WSO2Controller.X_TPP_BANKID) final String bankId, @AuthenticationPrincipal final User user, @PathVariable(ACCOUNT_ID) final String accountId) {
         return handleAccounts(HttpMethod.GET, bankId, user, "/accounts/" + accountId + "/parties", null);
     }
