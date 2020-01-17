@@ -41,7 +41,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter implements W
             .httpBasic().and().authorizeRequests()
             .antMatchers(HttpMethod.OPTIONS, "/**").permitAll() // enable it for support localhost develop
             .anyRequest().authenticated()
-            .and().formLogin().loginPage("/netbank/login")
+            .and().formLogin().loginPage("/login")
             .and().logout().permitAll();
 //@formatter:on
     }
