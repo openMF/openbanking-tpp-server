@@ -11,38 +11,21 @@ package uk.org.openbanking.v3_1_2.commons;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class CreditLine {
-    @JsonProperty("Included")
-    private boolean included;
-    @JsonProperty("Amount")
-    private Amount amount;
-    @JsonProperty("Type")
-    private String type;
 
-    public boolean isIncluded() {
-        return included;
-    }
+  @JsonProperty("Included")
+  private boolean included;
 
-    public void setIncluded(final boolean included) {
-        this.included = included;
-    }
-
-    public Amount getAmount() {
-        return amount;
-    }
-
-    public void setAmount(final Amount amount) {
-        this.amount = amount;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public void setType(final String type) {
-        this.type = type;
-    }
+  @JsonProperty("Amount")
+  private Amount amount;
+  
+  @JsonProperty("Type")
+  private String type;
 }

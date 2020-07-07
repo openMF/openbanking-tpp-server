@@ -6,23 +6,26 @@
  * https://mozilla.org/MPL/2.0/.
  */
 
-package hu.dpc.openbank.tpp.acefintech.backend.enity.aisp;
+package hu.dpc.openbank.tpp.acefintech.backend.entity.aisp;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class AccountResponseData {
-    @JsonProperty("Data")
-    private AccountResponse response;
+public class AccountAccount {
 
-    public AccountResponse getResponse() {
-        return response;
-    }
+  @JsonProperty("SchemeName")
+  private String schemeName;
 
-    public void setResponse(final AccountResponse response) {
-        this.response = response;
-    }
+  @JsonProperty("identification")
+  private String identification;
+  
+  @JsonProperty("Name")
+  private String name;
 }

@@ -10,19 +10,21 @@ package uk.org.openbanking.v3_1_2.parser;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
-
 import java.io.IOException;
 import java.time.LocalDateTime;
 
 public class LocalFormatDateTimeSerializer extends StdSerializer<LocalDateTime> {
 
-    public LocalFormatDateTimeSerializer() {
-        super(LocalDateTime.class);
-    }
+  private static final long serialVersionUID = 5399622556949932606L;
 
-    @Override
-    public void serialize(final LocalDateTime value, final JsonGenerator gen,
-                          final SerializerProvider provider) throws IOException {
-        gen.writeString(DateUtils.formatLocalFormatDateTime(value));
-    }
+
+  public LocalFormatDateTimeSerializer() {
+    super(LocalDateTime.class);
+  }
+
+
+  @Override
+  public void serialize(final LocalDateTime value, final JsonGenerator gen, final SerializerProvider provider) throws IOException {
+    gen.writeString(DateUtils.formatLocalFormatDateTime(value));
+  }
 }

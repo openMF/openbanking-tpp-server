@@ -11,70 +11,31 @@ package uk.org.openbanking.v3_1_2.commons;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.List;
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Balance {
-    @JsonProperty("AccountId")
-    private String accountId;
-    @JsonProperty("Amount")
-    private Amount amount;
-    @JsonProperty("CreditDebitIndicator")
-    private String creditDebitIndicator;
-    @JsonProperty("Type")
-    private String type;
-    @JsonProperty("DateTime")
-    private String dateTime;
-    @JsonProperty("CreditLine")
-    private List<CreditLine> creditLines;
 
-    public String getAccountId() {
-        return accountId;
-    }
+  @JsonProperty("AccountId")
+  private String accountId;
 
-    public void setAccountId(final String accountId) {
-        this.accountId = accountId;
-    }
+  @JsonProperty("Amount")
+  private Amount amount;
 
-    public Amount getAmount() {
-        return amount;
-    }
+  @JsonProperty("CreditDebitIndicator")
+  private String creditDebitIndicator;
 
-    public void setAmount(final Amount amount) {
-        this.amount = amount;
-    }
+  @JsonProperty("Type")
+  private String type;
 
-    public String getCreditDebitIndicator() {
-        return creditDebitIndicator;
-    }
-
-    public void setCreditDebitIndicator(final String creditDebitIndicator) {
-        this.creditDebitIndicator = creditDebitIndicator;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public void setType(final String type) {
-        this.type = type;
-    }
-
-    public String getDateTime() {
-        return dateTime;
-    }
-
-    public void setDateTime(final String dateTime) {
-        this.dateTime = dateTime;
-    }
-
-    public List<CreditLine> getCreditLines() {
-        return creditLines;
-    }
-
-    public void setCreditLines(final List<CreditLine> creditLines) {
-        this.creditLines = creditLines;
-    }
+  @JsonProperty("DateTime")
+  private String dateTime;
+  
+  @JsonProperty("CreditLine")
+  private List<CreditLine> creditLines;
 }

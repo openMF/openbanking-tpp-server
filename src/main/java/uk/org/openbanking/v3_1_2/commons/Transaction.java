@@ -11,148 +11,54 @@ package uk.org.openbanking.v3_1_2.commons;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Transaction {
-    @JsonProperty("AccountId")
-    private String accountId;
-    @JsonProperty("TransactionId")
-    private String transactionId;
-    @JsonProperty("TransactionReference")
-    private String transactionReference;
-    @JsonProperty("Amount")
-    private Amount amount;
-    @JsonProperty("StatementReference")
-    private String statementReference;
-    @JsonProperty("CreditDebitIndicator")
-    private String creditDebitIndicator;
-    @JsonProperty("Status")
-    private String status;
-    @JsonProperty("BookingDateTime")
-    private String bookingDateTime;
-    @JsonProperty("ValueDateTime")
-    private String valueDateTime;
-    @JsonProperty("TransactionInformation")
-    private String transactionInformation;
-    @JsonProperty("AddressLine")
-    private String addressLine;
-    @JsonProperty("BankTransactionCode")
-    private BankTransactionCode bankTransactionCode;
-    @JsonProperty("ProprietaryBankTransactionCode")
-    private ProprietaryBankTransactionCode proprietaryBankTransactionCode;
-    @JsonProperty("Balance")
-    private Balance balance;
 
-    public String getAccountId() {
-        return accountId;
-    }
+  @JsonProperty("AccountId")
+  private String accountId;
 
-    public void setAccountId(final String accountId) {
-        this.accountId = accountId;
-    }
+  @JsonProperty("TransactionId")
+  private String transactionId;
 
-    public String getTransactionId() {
-        return transactionId;
-    }
+  @JsonProperty("TransactionReference")
+  private String transactionReference;
 
-    public void setTransactionId(final String transactionId) {
-        this.transactionId = transactionId;
-    }
+  @JsonProperty("Amount")
+  private Amount amount;
 
-    public String getTransactionReference() {
-        return transactionReference;
-    }
+  @JsonProperty("StatementReference")
+  private String statementReference;
 
-    public void setTransactionReference(final String transactionReference) {
-        this.transactionReference = transactionReference;
-    }
+  @JsonProperty("CreditDebitIndicator")
+  private String creditDebitIndicator;
 
-    public Amount getAmount() {
-        return amount;
-    }
+  @JsonProperty("Status")
+  private String status;
 
-    public void setAmount(final Amount amount) {
-        this.amount = amount;
-    }
+  @JsonProperty("BookingDateTime")
+  private String bookingDateTime;
 
-    public String getStatementReference() {
-        return statementReference;
-    }
+  @JsonProperty("ValueDateTime")
+  private String valueDateTime;
 
-    public void setStatementReference(final String statementReference) {
-        this.statementReference = statementReference;
-    }
+  @JsonProperty("TransactionInformation")
+  private String transactionInformation;
 
-    public String getCreditDebitIndicator() {
-        return creditDebitIndicator;
-    }
+  @JsonProperty("AddressLine")
+  private String addressLine;
 
-    public void setCreditDebitIndicator(final String creditDebitIndicator) {
-        this.creditDebitIndicator = creditDebitIndicator;
-    }
+  @JsonProperty("BankTransactionCode")
+  private BankTransactionCode bankTransactionCode;
 
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(final String status) {
-        this.status = status;
-    }
-
-    public String getBookingDateTime() {
-        return bookingDateTime;
-    }
-
-    public void setBookingDateTime(final String bookingDateTime) {
-        this.bookingDateTime = bookingDateTime;
-    }
-
-    public String getValueDateTime() {
-        return valueDateTime;
-    }
-
-    public void setValueDateTime(final String valueDateTime) {
-        this.valueDateTime = valueDateTime;
-    }
-
-    public String getTransactionInformation() {
-        return transactionInformation;
-    }
-
-    public void setTransactionInformation(final String transactionInformation) {
-        this.transactionInformation = transactionInformation;
-    }
-
-    public String getAddressLine() {
-        return addressLine;
-    }
-
-    public void setAddressLine(final String addressLine) {
-        this.addressLine = addressLine;
-    }
-
-    public BankTransactionCode getBankTransactionCode() {
-        return bankTransactionCode;
-    }
-
-    public void setBankTransactionCode(final BankTransactionCode bankTransactionCode) {
-        this.bankTransactionCode = bankTransactionCode;
-    }
-
-    public ProprietaryBankTransactionCode getProprietaryBankTransactionCode() {
-        return proprietaryBankTransactionCode;
-    }
-
-    public void setProprietaryBankTransactionCode(final ProprietaryBankTransactionCode proprietaryBankTransactionCode) {
-        this.proprietaryBankTransactionCode = proprietaryBankTransactionCode;
-    }
-
-    public Balance getBalance() {
-        return balance;
-    }
-
-    public void setBalance(final Balance balance) {
-        this.balance = balance;
-    }
+  @JsonProperty("ProprietaryBankTransactionCode")
+  private ProprietaryBankTransactionCode proprietaryBankTransactionCode;
+  
+  @JsonProperty("Balance")
+  private Balance balance;
 }

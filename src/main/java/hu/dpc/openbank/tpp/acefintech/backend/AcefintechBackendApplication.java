@@ -16,9 +16,9 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @EnableTransactionManagement
 public class AcefintechBackendApplication {
 
-    public static void main(final String[] args) {
-        SpringApplication.run(AcefintechBackendApplication.class, args);
-    }
+  public static void main(final String[] args) {
+    SpringApplication.run(AcefintechBackendApplication.class, args);
+  }
 
-
+ 
 }
