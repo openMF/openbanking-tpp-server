@@ -6,24 +6,23 @@
  * https://mozilla.org/MPL/2.0/.
  */
 
-package uk.org.openbanking.v3_1_2.payments.ext;
+package hu.dpc.openbank.tpp.acefintech.backend.entity.aisp;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+
 
 @Getter
 @Setter
+@RequiredArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class InteropTransactionType {
+public class ConsentsRequest {
 
-  @JsonProperty("scenario")
-  private String scenario;
-  @JsonProperty("initiator")
-  private String initiator;
-  @JsonProperty("initiatorType")
-  private String initiatorType;
+  @JsonProperty("Data")
+  private final Consents consents;
 }

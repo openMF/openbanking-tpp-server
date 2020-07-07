@@ -6,11 +6,16 @@
  * https://mozilla.org/MPL/2.0/.
  */
 
-package hu.dpc.openbank.tpp.acefintech.backend.repository;
+package hu.dpc.openbank.exceptions;
 
 public class BankIDNotFoundException extends RuntimeException {
-    public BankIDNotFoundException(final String bankId) {
-        super("BankID not found [" + bankId + "]!");
-    }
+
+  private static final long serialVersionUID = 8681158276278608889L;
+
+
+  public BankIDNotFoundException(final String bankId) {
+    super("BankID not found [" + bankId + "]!");
+  }
 
 }
+

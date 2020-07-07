@@ -6,10 +6,15 @@
  * https://mozilla.org/MPL/2.0/.
  */
 
-package hu.dpc.openbank.tpp.acefintech.backend.repository;
+package hu.dpc.openbank.exceptions;
 
 public class BankConfigException extends RuntimeException {
-    public BankConfigException(final String message) {
-        super(message);
-    }
+
+  private static final long serialVersionUID = 4742876299057861863L;
+
+
+  public BankConfigException(final String message) {
+    super(message);
+  }
 }
+

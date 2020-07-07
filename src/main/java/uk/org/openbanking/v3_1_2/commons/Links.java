@@ -11,58 +11,27 @@ package uk.org.openbanking.v3_1_2.commons;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Links {
-    @JsonProperty("Self")
-    private String self;
-    @JsonProperty("First")
-    private String first;
-    @JsonProperty("Prev")
-    private String prev;
-    @JsonProperty("Next")
-    private String next;
-    @JsonProperty("Last")
-    private String last;
 
-    public String getSelf() {
-        return self;
-    }
+  @JsonProperty("Self")
+  private String self;
 
-    public void setSelf(final String self) {
-        this.self = self;
-    }
+  @JsonProperty("First")
+  private String first;
 
-    public String getFirst() {
-        return first;
-    }
+  @JsonProperty("Prev")
+  private String prev;
 
-    public void setFirst(final String first) {
-        this.first = first;
-    }
-
-    public String getPrev() {
-        return prev;
-    }
-
-    public void setPrev(final String prev) {
-        this.prev = prev;
-    }
-
-    public String getNext() {
-        return next;
-    }
-
-    public void setNext(final String next) {
-        this.next = next;
-    }
-
-    public String getLast() {
-        return last;
-    }
-
-    public void setLast(final String last) {
-        this.last = last;
-    }
+  @JsonProperty("Next")
+  private String next;
+  
+  @JsonProperty("Last")
+  private String last;
 }

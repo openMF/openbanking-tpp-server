@@ -11,29 +11,18 @@ package uk.org.openbanking.v3_1_2.commons;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ProprietaryBankTransactionCode {
-    @JsonProperty("Code")
-    private String code;
-    @JsonProperty("Issuer")
-    private String issuer;
 
-    public String getCode() {
-        return code;
-    }
-
-    public void setCode(final String code) {
-        this.code = code;
-    }
-
-    public String getIssuer() {
-        return issuer;
-    }
-
-    public void setIssuer(final String issuer) {
-        this.issuer = issuer;
-    }
-
+  @JsonProperty("Code")
+  private String code;
+  
+  @JsonProperty("Issuer")
+  private String issuer;
 }

@@ -9,7 +9,12 @@
 package hu.dpc.openbank.exceptions;
 
 public class APICallException extends RuntimeException {
+
+    private static final long serialVersionUID = -8771896802408933169L;
+
+
     public APICallException(final String message) {
-        super(message);
-    }
+    super(message);
+  }
 }
+

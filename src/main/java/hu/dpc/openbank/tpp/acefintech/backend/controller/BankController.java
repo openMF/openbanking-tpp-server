@@ -9,7 +9,7 @@
 package hu.dpc.openbank.tpp.acefintech.backend.controller;
 
 
-import hu.dpc.openbank.tpp.acefintech.backend.enity.bank.SupportedBanks;
+import hu.dpc.openbank.tpp.acefintech.backend.entity.bank.SupportedBanks;
 import hu.dpc.openbank.tpp.acefintech.backend.repository.BankRepository;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,16 +19,17 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping(path = "/banks/v1/")
 public class BankController {
-    private final BankRepository bankRepository;
 
-    public BankController(final BankRepository bankRepository) {
-        this.bankRepository = bankRepository;
-    }
+  private final BankRepository bankRepository;
 
-    @GetMapping(path = "/supported", produces = MediaType.APPLICATION_JSON_VALUE)
-    public SupportedBanks getSupportedBanks() {
-        final SupportedBanks supportedBanks = new SupportedBanks();
-        supportedBanks.setBankInfoList(bankRepository.findAll());
-        return supportedBanks;
-    }
+
+  public BankController(final BankRepository bankRepository) {
+    this.bankRepository = bankRepository;
+  }
+
+
+  @GetMapping(path = "/supported", produces = MediaType.APPLICATION_JSON_VALUE)
+  public SupportedBanks getSupportedBanks() {
+    return new SupportedBanks(bankRepository.findAll());
+  }
 }

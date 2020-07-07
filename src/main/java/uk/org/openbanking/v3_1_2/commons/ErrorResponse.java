@@ -11,51 +11,26 @@ package uk.org.openbanking.v3_1_2.commons;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.List;
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ErrorResponse {
-    @JsonProperty("Code")
-    private String code;
-    @JsonProperty("Id")
-    private String id;
-    @JsonProperty("Message")
-    private String message;
-    @JsonProperty("Errors")
-    private List<Errors> errors;
 
-    public String getCode() {
-        return code;
-    }
+  @JsonProperty("Code")
+  private String code;
 
-    public void setCode(final String code) {
-        this.code = code;
-    }
+  @JsonProperty("Id")
+  private String id;
 
-    public String getId() {
-        return id;
-    }
-
-    public void setId(final String id) {
-        this.id = id;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(final String message) {
-        this.message = message;
-    }
-
-    public List<Errors> getErrors() {
-        return errors;
-    }
-
-    public void setErrors(final List<Errors> errors) {
-        this.errors = errors;
-    }
+  @JsonProperty("Message")
+  private String message;
+  
+  @JsonProperty("Errors")
+  private List<Errors> errors;
 }
 
