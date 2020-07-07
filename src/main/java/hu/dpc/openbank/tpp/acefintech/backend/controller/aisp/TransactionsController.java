@@ -74,7 +74,7 @@ public class TransactionsController extends WSO2Controller {
       queryParams.append("toBookingDateTime=").append(toBookingDateTime);
     }
 
-    if (0 == queryParams.length()) {
+    if (0 != queryParams.length()) {
       queryParams.append('?').append(queryParams);
     }
     return queryParams.toString();
