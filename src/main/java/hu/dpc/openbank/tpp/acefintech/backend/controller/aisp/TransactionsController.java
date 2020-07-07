@@ -63,21 +63,20 @@ public class TransactionsController extends WSO2Controller {
 
   @Nonnull
   private String createParams(final String fromBookingDateTime, final String toBookingDateTime) {
-    final StringBuilder queryParams = new StringBuilder();
+    String queryParams = "";
     if (null != fromBookingDateTime && !fromBookingDateTime.isEmpty()) {
-      queryParams.append("fromBookingDateTime=").append(fromBookingDateTime);
+      queryParams = "fromBookingDateTime=" + fromBookingDateTime;
     }
     if (null != toBookingDateTime && !toBookingDateTime.isEmpty()) {
-      if (0 == queryParams.length()) {
-        queryParams.append('&');
+      if (!queryParams.isEmpty()) {
+        queryParams += '&';
       }
-      queryParams.append("toBookingDateTime=").append(toBookingDateTime);
+      queryParams += "toBookingDateTime=" + toBookingDateTime;
     }
 
-    if (0 != queryParams.length()) {
-      queryParams.append('?').append(queryParams);
+    if (!queryParams.isEmpty()) {
+      queryParams = '?' + queryParams;
     }
-    return queryParams.toString();
+    return queryParams;
   }
-
 }
