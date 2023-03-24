@@ -8,12 +8,20 @@
 
 package uk.org.openbanking.v3_1_2.commons;
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import hu.dpc.openbank.tpp.acefintech.backend.enity.aisp.AccountAccount;
+import lombok.Getter;
+import lombok.Setter;
+
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@Getter
+@Setter
 public class Errors {
     @JsonProperty("ErrorCode")
     private String errorCode;
@@ -24,35 +32,5 @@ public class Errors {
     @JsonProperty("Url")
     private String url;
 
-    public String getErrorCode() {
-        return errorCode;
-    }
-
-    public void setErrorCode(final String errorCode) {
-        this.errorCode = errorCode;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(final String message) {
-        this.message = message;
-    }
-
-    public String getPath() {
-        return path;
-    }
-
-    public void setPath(final String path) {
-        this.path = path;
-    }
-
-    public String getUrl() {
-        return url;
-    }
-
-    public void setUrl(final String url) {
-        this.url = url;
-    }
+  
 }

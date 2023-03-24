@@ -9,10 +9,17 @@
 package hu.dpc.openbank.oauth2;
 
 import hu.dpc.openbank.tpp.acefintech.backend.enity.bank.BankInfo;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+@Getter
+@Setter
 public class OAuthConfig {
     private String apiKey;
     private String apiSecret;
@@ -32,47 +39,5 @@ public class OAuthConfig {
     public OAuthConfig() {
     }
 
-    public String getSubject() {
-        return subject;
-    }
-
-    public void setSubject(final String subject) {
-        this.subject = subject;
-    }
-
-    public String getApiSecret() {
-        return apiSecret;
-    }
-
-    public void setApiSecret(final String apiSecret) {
-        this.apiSecret = apiSecret;
-    }
-
-    public URL getTokenURL() {
-        return tokenURL;
-    }
-
-    public void setTokenURL(final String tokenURL) throws MalformedURLException {
-        this.tokenURL = new URL(tokenURL);
-    }
-
-    public String getApiKey() {
-        return apiKey;
-    }
-
-    public void setApiKey(final String apiKey) {
-        this.apiKey = apiKey;
-    }
-
-    public String getCallbackURL() {
-        return callbackURL;
-    }
-
-    public void setCallbackURL(final String callbackURL) {
-        this.callbackURL = callbackURL;
-    }
-
-    public BankInfo getBankInfo() {
-        return bankInfo;
-    }
+   
 }

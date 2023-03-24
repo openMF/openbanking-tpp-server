@@ -8,12 +8,20 @@
 
 package uk.org.openbanking.v3_1_2.commons;
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import hu.dpc.openbank.tpp.acefintech.backend.enity.aisp.AccountAccount;
+import lombok.Getter;
+import lombok.Setter;
+
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@Getter
+@Setter
 public class CreditLine {
     @JsonProperty("Included")
     private boolean included;
@@ -22,27 +30,5 @@ public class CreditLine {
     @JsonProperty("Type")
     private String type;
 
-    public boolean isIncluded() {
-        return included;
-    }
-
-    public void setIncluded(final boolean included) {
-        this.included = included;
-    }
-
-    public Amount getAmount() {
-        return amount;
-    }
-
-    public void setAmount(final Amount amount) {
-        this.amount = amount;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public void setType(final String type) {
-        this.type = type;
-    }
+   
 }

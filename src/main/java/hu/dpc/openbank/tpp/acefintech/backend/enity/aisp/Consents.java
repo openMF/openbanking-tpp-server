@@ -13,6 +13,9 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
+import lombok.Getter;
+import lombok.Setter;
 import uk.org.openbanking.v3_1_2.parser.LocalFormatDateTimeDeserializer;
 import uk.org.openbanking.v3_1_2.parser.LocalFormatDateTimeSerializer;
 
@@ -21,6 +24,8 @@ import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@Getter
+@Setter
 public class Consents {
     @JsonProperty("Permissions")
     public  List<String>  permissions;
@@ -39,43 +44,4 @@ public class Consents {
     @JsonProperty("ConsentId")
     private String        consentId;
 
-    public String getConsentId() {
-        return consentId;
-    }
-
-    public void setConsentId(final String consentId) {
-        this.consentId = consentId;
-    }
-
-    public List<String> getPermissions() {
-        return permissions;
-    }
-
-    public void setPermissions(final List<String> permissions) {
-        this.permissions = permissions;
-    }
-
-    public LocalDateTime getExpirationDateTime() {
-        return expirationDateTime;
-    }
-
-    public void setExpirationDateTime(final LocalDateTime expirationDateTime) {
-        this.expirationDateTime = expirationDateTime;
-    }
-
-    public LocalDateTime getTransactionFromDateTime() {
-        return transactionFromDateTime;
-    }
-
-    public void setTransactionFromDateTime(final LocalDateTime transactionFromDateTime) {
-        this.transactionFromDateTime = transactionFromDateTime;
-    }
-
-    public LocalDateTime getTransactionToDateTime() {
-        return transactionToDateTime;
-    }
-
-    public void setTransactionToDateTime(final LocalDateTime transactionToDateTime) {
-        this.transactionToDateTime = transactionToDateTime;
-    }
-}
+  }

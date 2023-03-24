@@ -8,12 +8,18 @@
 
 package hu.dpc.openbank.tpp.acefintech.backend.enity.aisp;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import java.util.List;
 
+@Getter
+@Setter
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Account {
@@ -88,67 +94,5 @@ public class Account {
     @JsonProperty("Account")
     private List<AccountAccount> account;
 
-    public String getAccountId() {
-        return accountId;
-    }
-
-    public void setAccountId(final String accountId) {
-        this.accountId = accountId;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(final String status) {
-        this.status = status;
-    }
-
-    public String getStatusUpdateDateTime() {
-        return statusUpdateDateTime;
-    }
-
-    public void setStatusUpdateDateTime(final String statusUpdateDateTime) {
-        this.statusUpdateDateTime = statusUpdateDateTime;
-    }
-
-    public String getCurrency() {
-        return currency;
-    }
-
-    public void setCurrency(final String currency) {
-        this.currency = currency;
-    }
-
-    public String getAccountType() {
-        return accountType;
-    }
-
-    public void setAccountType(final String accountType) {
-        this.accountType = accountType;
-    }
-
-    public String getAccountSubType() {
-        return accountSubType;
-    }
-
-    public void setAccountSubType(final String accountSubType) {
-        this.accountSubType = accountSubType;
-    }
-
-    public String getNickname() {
-        return nickname;
-    }
-
-    public void setNickname(final String nickname) {
-        this.nickname = nickname;
-    }
-
-    public List<AccountAccount> getAccount() {
-        return account;
-    }
-
-    public void setAccount(final List<AccountAccount> account) {
-        this.account = account;
-    }
+  
 }

@@ -8,12 +8,20 @@
 
 package uk.org.openbanking.v3_1_2.commons;
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import hu.dpc.openbank.tpp.acefintech.backend.enity.aisp.AccountAccount;
+import lombok.Getter;
+import lombok.Setter;
+
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@Getter
+@Setter
 public class Meta {
     @JsonProperty("TotalPages")
     private int totalPages;
@@ -22,27 +30,5 @@ public class Meta {
     @JsonProperty("LastAvailableDateTime")
     private String lastAvailableDateTime;
 
-    public int getTotalPages() {
-        return totalPages;
-    }
-
-    public void setTotalPages(final int totalPages) {
-        this.totalPages = totalPages;
-    }
-
-    public String getFirstAvailableDateTime() {
-        return firstAvailableDateTime;
-    }
-
-    public void setFirstAvailableDateTime(final String firstAvailableDateTime) {
-        this.firstAvailableDateTime = firstAvailableDateTime;
-    }
-
-    public String getLastAvailableDateTime() {
-        return lastAvailableDateTime;
-    }
-
-    public void setLastAvailableDateTime(final String lastAvailableDateTime) {
-        this.lastAvailableDateTime = lastAvailableDateTime;
-    }
+   
 }

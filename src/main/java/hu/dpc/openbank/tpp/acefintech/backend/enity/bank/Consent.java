@@ -8,13 +8,23 @@
 
 package hu.dpc.openbank.tpp.acefintech.backend.enity.bank;
 
+import java.util.List;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import hu.dpc.openbank.tpp.acefintech.backend.enity.aisp.AccountAccount;
+import lombok.Getter;
+import lombok.Setter;
+
 @Entity
 @Table(name="CONSENTS")
+@Getter
+@Setter
 public class Consent {
     @Id
     @Column(name="ID")
@@ -26,35 +36,5 @@ public class Consent {
     @Column(name="EXPIRES")
     private int expires;
 
-    public int getId() {
-        return id;
-    }
-
-    public void setId(final int id) {
-        this.id = id;
-    }
-
-    public String getBankId() {
-        return bankId;
-    }
-
-    public void setBankId(final String bankId) {
-        this.bankId = bankId;
-    }
-
-    public String getConsentId() {
-        return consentId;
-    }
-
-    public void setConsentId(final String consentId) {
-        this.consentId = consentId;
-    }
-
-    public int getExpires() {
-        return expires;
-    }
-
-    public void setExpires(final int expires) {
-        this.expires = expires;
-    }
+  
 }

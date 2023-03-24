@@ -8,23 +8,25 @@
 
 package uk.org.openbanking.v3_1_2.commons;
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import hu.dpc.openbank.tpp.acefintech.backend.enity.aisp.AccountAccount;
+import lombok.Getter;
+import lombok.Setter;
+
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@Getter
+@Setter
 public class Amount {
     @JsonProperty("Amount")
     private String amount;
     @JsonProperty("Currency")
     private String currency;
 
-    public String getAmount() {
-        return amount;
-    }
-
-    public void setAmount(final String amount) {
-        this.amount = amount;
-    }
+   
 }

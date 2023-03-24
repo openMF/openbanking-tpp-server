@@ -13,6 +13,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import hu.dpc.common.http.HttpResponse;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * <pre>curl -k -X doPost "https://localhost:8243/token"
@@ -28,6 +30,8 @@ import hu.dpc.common.http.HttpResponse;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@Getter
+@Setter
 public class TokenResponse extends HttpResponse {
     @JsonProperty("access_token")
     private String accessToken;
@@ -50,84 +54,5 @@ public class TokenResponse extends HttpResponse {
     @JsonIgnore
     private long   jwtExpires;
 
-    public String getAccessToken() {
-        return accessToken;
-    }
-
-    public void setAccessToken(final String accessToken) {
-        this.accessToken = accessToken;
-    }
-
-    public String getRefreshToken() {
-        return refreshToken;
-    }
-
-    public void setRefreshToken(final String refreshToken) {
-        this.refreshToken = refreshToken;
-    }
-
-    public String getScope() {
-        return scope;
-    }
-
-    public void setScope(final String scope) {
-        this.scope = scope;
-    }
-
-    public String getIdToken() {
-        return idToken;
-    }
-
-    public void setIdToken(final String idToken) {
-        this.idToken = idToken;
-    }
-
-    public String getTokenType() {
-        return tokenType;
-    }
-
-    public void setTokenType(final String tokenType) {
-        this.tokenType = tokenType;
-    }
-
-    public long getExpiresIn() {
-        return expiresIn;
-    }
-
-    public void setExpiresIn(final long expiresIn) {
-        this.expiresIn = (expiresIn * 1000L) + System.currentTimeMillis();
-    }
-
-
-    public String getError() {
-        return error;
-    }
-
-    public void setError(final String error) {
-        this.error = error;
-    }
-
-    public String getErrorDescription() {
-        return errorDescription;
-    }
-
-    public void setErrorDescription(final String errorDescription) {
-        this.errorDescription = errorDescription;
-    }
-
-    public String getSubject() {
-        return subject;
-    }
-
-    public void setSubject(final String subject) {
-        this.subject = subject;
-    }
-
-    public long getJwtExpires() {
-        return jwtExpires;
-    }
-
-    public void setJwtExpires(final long jwtExpires) {
-        this.jwtExpires = jwtExpires;
-    }
+  
 }
