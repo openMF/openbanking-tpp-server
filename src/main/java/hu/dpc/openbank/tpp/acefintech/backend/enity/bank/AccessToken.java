@@ -8,10 +8,20 @@
 
 package hu.dpc.openbank.tpp.acefintech.backend.enity.bank;
 
+import java.util.List;
+
 import javax.persistence.*;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import hu.dpc.openbank.tpp.acefintech.backend.enity.aisp.AccountAccount;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
 @Table(name = "ACCESS_TOKEN")
+@Getter
+@Setter
 public class AccessToken {
     @Id
     @Column(name = "ID")
@@ -30,61 +40,7 @@ public class AccessToken {
     @Column(name = "REFRESH_TOKEN")
     private String refreshToken;
 
-    public int getId() {
-        return id;
-    }
-
-    public void setId(final int id) {
-        this.id = id;
-    }
-
-    public String getBankId() {
-        return bankId;
-    }
-
-    public void setBankId(final String bankId) {
-        this.bankId = bankId;
-    }
-
-    public String getUserName() {
-        return userName;
-    }
-
-    public void setUserName(final String userName) {
-        this.userName = userName;
-    }
-
-    public String getAccessToken() {
-        return accessToken;
-    }
-
-    public void setAccessToken(final String accessToken) {
-        this.accessToken = accessToken;
-    }
-
-    public String getAccessTokenType() {
-        return accessTokenType;
-    }
-
-    public void setAccessTokenType(final String accessTokenType) {
-        this.accessTokenType = accessTokenType;
-    }
-
-    public long getExpires() {
-        return expires;
-    }
-
-    public void setExpires(final long expires) {
-        this.expires = expires;
-    }
-
-    public String getRefreshToken() {
-        return refreshToken;
-    }
-
-    public void setRefreshToken(final String refreshToken) {
-        this.refreshToken = refreshToken;
-    }
+   
 
     /**
      * Token is expired?

@@ -10,9 +10,15 @@ package hu.dpc.openbank.tpp.acefintech.backend.enity.bank;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import hu.dpc.openbank.tpp.acefintech.backend.enity.aisp.AccountAccount;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.util.ArrayList;
 import java.util.List;
 
+@Getter
+@Setter
 public class SupportedBanks {
     @JsonProperty("BankInfo")
     private List<BankInfo> bankInfoList = new ArrayList<>();
@@ -21,11 +27,5 @@ public class SupportedBanks {
         bankInfoList.add(bankInfo);
     }
 
-    public List<BankInfo> getBankInfoList() {
-        return bankInfoList;
-    }
-
-    public void setBankInfoList(final List<BankInfo> bankInfoList) {
-        this.bankInfoList = bankInfoList;
-    }
+   
 }

@@ -11,6 +11,12 @@ package hu.dpc.openbank.tpp.acefintech.backend.enity.bank;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import hu.dpc.openbank.tpp.acefintech.backend.enity.aisp.AccountAccount;
+import lombok.Getter;
+import lombok.Setter;
+
+import java.util.List;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
@@ -18,6 +24,8 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name = "BANKS")
+@Getter
+@Setter
 public class BankInfo {
     @Id
     @JsonProperty("BankId")
@@ -60,107 +68,5 @@ public class BankInfo {
     @Column(name = "PAYMENTS_URL")
     private String paymentsUrl;
 
-    public String getBankName() {
-        return bankName;
-    }
-
-    public void setBankName(final String bankName) {
-        this.bankName = bankName;
-    }
-
-    public String getShortName() {
-        return shortName;
-    }
-
-    public void setShortName(final String shortName) {
-        this.shortName = shortName;
-    }
-
-    public String getLongName() {
-        return longName;
-    }
-
-    public void setLongName(final String longName) {
-        this.longName = longName;
-    }
-
-    public String getLogoUrl() {
-        return logoUrl;
-    }
-
-    public void setLogoUrl(final String logoUrl) {
-        this.logoUrl = logoUrl;
-    }
-
-    public String getBankId() {
-        return bankId;
-    }
-
-    public void setBankId(final String bankId) {
-        this.bankId = bankId;
-    }
-
-    public String getTokenUrl() {
-        return tokenUrl;
-    }
-
-    public void setTokenUrl(final String tokenUrl) {
-        this.tokenUrl = tokenUrl;
-    }
-
-    public String getAccountsUrl() {
-        return accountsUrl;
-    }
-
-    public void setAccountsUrl(final String accountsUrl) {
-        this.accountsUrl = accountsUrl;
-    }
-
-    public String getClientId() {
-        return clientId;
-    }
-
-    public void setClientId(final String clientId) {
-        this.clientId = clientId;
-    }
-
-    public String getClientSecret() {
-        return clientSecret;
-    }
-
-    public void setClientSecret(final String clientSecret) {
-        this.clientSecret = clientSecret;
-    }
-
-    public String getCallBackUrl() {
-        return callBackUrl;
-    }
-
-    public void setCallBackUrl(final String callBackUrl) {
-        this.callBackUrl = callBackUrl;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(final String username) {
-        this.username = username;
-    }
-
-    public String getAuthorizeUrl() {
-        return authorizeUrl;
-    }
-
-    public void setAuthorizeUrl(final String authorizeUrl) {
-        this.authorizeUrl = authorizeUrl;
-    }
-
-    public String getPaymentsUrl() {
-        return paymentsUrl;
-    }
-
-    public void setPaymentsUrl(final String paymentsUrl) {
-        this.paymentsUrl = paymentsUrl;
-    }
+   
 }

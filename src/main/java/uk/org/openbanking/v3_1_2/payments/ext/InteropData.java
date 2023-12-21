@@ -8,12 +8,20 @@
 
 package uk.org.openbanking.v3_1_2.payments.ext;
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import hu.dpc.openbank.tpp.acefintech.backend.enity.aisp.AccountAccount;
+import lombok.Getter;
+import lombok.Setter;
+
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@Getter
+@Setter
 public class InteropData {
 
     @JsonProperty("amountType")
@@ -23,27 +31,5 @@ public class InteropData {
     @JsonProperty("transactionType")
     private InteropTransactionType transactionType;
 
-    public String getAmountType() {
-        return amountType;
-    }
-
-    public void setAmountType(final String amountType) {
-        this.amountType = amountType;
-    }
-
-    public String getNote() {
-        return note;
-    }
-
-    public void setNote(final String note) {
-        this.note = note;
-    }
-
-    public InteropTransactionType getTransactionType() {
-        return transactionType;
-    }
-
-    public void setTransactionType(final InteropTransactionType transactionType) {
-        this.transactionType = transactionType;
-    }
+    
 }

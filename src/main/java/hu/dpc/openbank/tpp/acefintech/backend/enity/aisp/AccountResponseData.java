@@ -8,21 +8,22 @@
 
 package hu.dpc.openbank.tpp.acefintech.backend.enity.aisp;
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import lombok.Getter;
+import lombok.Setter;
+
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@Getter
+@Setter
 public class AccountResponseData {
     @JsonProperty("Data")
     private AccountResponse response;
 
-    public AccountResponse getResponse() {
-        return response;
-    }
 
-    public void setResponse(final AccountResponse response) {
-        this.response = response;
-    }
 }

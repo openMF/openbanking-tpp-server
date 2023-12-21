@@ -8,13 +8,23 @@
 
 package hu.dpc.openbank.tpp.acefintech.backend.enity.bank;
 
+import java.util.List;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import hu.dpc.openbank.tpp.acefintech.backend.enity.aisp.AccountAccount;
+import lombok.Getter;
+import lombok.Setter;
+
 @Entity
 @Table(name = "USERS")
+@Getter
+@Setter
 public class Users {
     @Id
     @Column(name = "USERNAME", nullable = false, unique = true)
@@ -24,27 +34,5 @@ public class Users {
     @Column(name = "ENABLED")
     private boolean enabled;
 
-    public String getUserName() {
-        return userName;
-    }
-
-    public void setUserName(final String userName) {
-        this.userName = userName;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(final String password) {
-        this.password = password;
-    }
-
-    public boolean isEnabled() {
-        return enabled;
-    }
-
-    public void setEnabled(final boolean enabled) {
-        this.enabled = enabled;
-    }
+   
 }

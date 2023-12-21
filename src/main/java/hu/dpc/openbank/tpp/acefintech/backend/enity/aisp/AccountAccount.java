@@ -8,12 +8,19 @@
 
 package hu.dpc.openbank.tpp.acefintech.backend.enity.aisp;
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import lombok.Getter;
+import lombok.Setter;
+
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@Getter
+@Setter
 public class AccountAccount {
     @JsonProperty("SchemeName")
     private String schemeName;
@@ -22,27 +29,5 @@ public class AccountAccount {
     @JsonProperty("Name")
     private String name;
 
-    public String getSchemeName() {
-        return schemeName;
-    }
-
-    public void setSchemeName(final String schemeName) {
-        this.schemeName = schemeName;
-    }
-
-    public String getIdentification() {
-        return identification;
-    }
-
-    public void setIdentification(final String identification) {
-        this.identification = identification;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(final String name) {
-        this.name = name;
-    }
+   
 }

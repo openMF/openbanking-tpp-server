@@ -12,10 +12,16 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import hu.dpc.openbank.tpp.acefintech.backend.enity.aisp.AccountAccount;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@Getter
+@Setter
 public class Balance {
     @JsonProperty("AccountId")
     private String accountId;
@@ -30,51 +36,4 @@ public class Balance {
     @JsonProperty("CreditLine")
     private List<CreditLine> creditLines;
 
-    public String getAccountId() {
-        return accountId;
-    }
-
-    public void setAccountId(final String accountId) {
-        this.accountId = accountId;
-    }
-
-    public Amount getAmount() {
-        return amount;
-    }
-
-    public void setAmount(final Amount amount) {
-        this.amount = amount;
-    }
-
-    public String getCreditDebitIndicator() {
-        return creditDebitIndicator;
-    }
-
-    public void setCreditDebitIndicator(final String creditDebitIndicator) {
-        this.creditDebitIndicator = creditDebitIndicator;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public void setType(final String type) {
-        this.type = type;
-    }
-
-    public String getDateTime() {
-        return dateTime;
-    }
-
-    public void setDateTime(final String dateTime) {
-        this.dateTime = dateTime;
-    }
-
-    public List<CreditLine> getCreditLines() {
-        return creditLines;
-    }
-
-    public void setCreditLines(final List<CreditLine> creditLines) {
-        this.creditLines = creditLines;
-    }
 }
